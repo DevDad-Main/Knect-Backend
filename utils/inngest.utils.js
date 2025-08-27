@@ -15,20 +15,26 @@ const syncUserCreation = inngest.createFunction(
 
     let username = email_addresses[0].email_address.split("@")[0];
 
-    // Check availability of username
-    const user = await User.findOne({ username });
+    try {
+      // Check availability of username
+      const user = await User.findOne({ username });
 
-    if (user) {
-      username = username + Math.floor(Math.random() * 10000);
+      if (user) {
+        username = username + Math.floor(Math.random() * 10000);
+      }
+
+      const newUser = new User({
+        _id: id,
+        email: email_addresses[0].email_address,
+        full_name: `${first_name} ${last_name}`,
+        username: username,
+        profile_picture: image_url,
+      });
+
+      await newUser.save();
+    } catch (err) {
+      throw new Error(err);
     }
-
-    const newUser = await User.create({
-      _id: id,
-      email: email_addresses[0].email_address,
-      full_name: `${first_name} ${last_name}`,
-      username,
-      profile_picture: image_url,
-    });
   },
 );
 //#endregion
