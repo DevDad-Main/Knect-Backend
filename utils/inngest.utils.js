@@ -22,9 +22,12 @@ const syncUserCreation = inngest.createFunction(
         username = username + Math.floor(Math.random() * 10000);
       }
 
+      // last_name = "null" ? "" : last_name;
+
       const newUser = new User({
         _id: id,
         email: email_addresses[0].email_address,
+        // full_name: `${first_name} ${(last_name = "null" ? "" : last_name)}`,
         full_name: `${first_name} ${last_name}`,
         username,
         profile_picture: image_url,
