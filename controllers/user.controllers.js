@@ -1,3 +1,4 @@
+import { Connection } from "../models/Connection.models.js";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
@@ -66,6 +67,7 @@ export const updateUser = async (req, res) => {
       ? (profile_picture = await uploadOnImageKit(profilePicture, "512"))
       : null;
     coverImage ? (cover = await uploadOnImageKit(coverImage, "1280")) : null;
+
     // if (profilePicture) {
     //   const buffer = fs.readFileSync(profilePicture.path);
     //   const response = await imagekit.upload({
@@ -210,4 +212,94 @@ export const unfollowUser = async (req, res) => {
   }
 };
 //#endregion
-export { getUser, updateUser, discoverUsers, followUser, unfollowUser };
+
+//#region Send Connection Request
+export const sendConnectionRequest = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { id } = req.params;
+
+    // Check if user has sent more than 20 connection requests in the last 24 hours
+    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const connectionRequests = await Connection.find({
+      from_user_id: userId,
+      createdAt: { $gt: last24Hours },
+    });
+
+    if (connectionRequests.length >= 20) {
+      throw new ApiError(
+        400,
+        "You have sent too many connection requests in the last 24 hours",
+      );
+    }
+
+    // Check if users are already connected
+    const connection = await Connection.findOne({
+      $or: [
+        { from_user_id: userId, to_user_id: id },
+        { from_user_id: id, to_user_id: userId },
+      ],
+    });
+
+    if (!connection) {
+      await Connection.create({
+        from_user_id: userId,
+        to_user_id: id,
+      });
+      return res
+        .status(200)
+        .json(new ApiResponse(200, "Connection Request Sent"));
+    } else if (connection && connection.status === "accepted") {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, "You are already connected"));
+    }
+
+    return res
+      .status(400)
+      .json(new ApiResponse(400, "Connection Request Pending"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+//#region Get User Connections
+export const getUserConnections = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const user = await User.findById(userId).populate(
+      "connections followers following",
+    );
+
+    const { connections, followers, following } = user;
+
+    const pendingConnections = (
+      await Connection.find({ to_user_id: userId, status: "pending" }).populate(
+        "from_user_id",
+      )
+    ).map((connection) => connection.from_user_id);
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { connections, followers, following, pendingConnections },
+          "User Successfully Fetched",
+        ),
+      );
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+export {
+  getUser,
+  updateUser,
+  discoverUsers,
+  followUser,
+  unfollowUser,
+  sendConnectionRequest,
+};
