@@ -22,7 +22,7 @@ const syncUserCreation = inngest.createFunction(
       username = username + Math.floor(Math.random() * 10000);
     }
 
-    const newUser = User.create({
+    const newUser = await User.create({
       _id: id,
       email: email_addresses[0].email_address,
       full_name: `${first_name} ${last_name}`,
