@@ -32,5 +32,3 @@ export async function uploadOnImageKit(image, width) {
 
   return url;
 }
-
-export { uploadOnImageKit };

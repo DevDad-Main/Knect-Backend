@@ -18,6 +18,8 @@ router.use(requireAuth());
 
 router.get("/user", getUser);
 router.get("/discover", discoverUsers);
+router.get("/connections", getUserConnections);
+
 router.post(
   "/update-user",
   upload.fields([
@@ -30,6 +32,5 @@ router.post("/follow/:id", followUser);
 router.post("/unfollow/:id", unfollowUser);
 router.post("/connect", sendConnectionRequest);
 router.post("/accept", acceptUserConnections);
-router.get("/connections", getUserConnections);
 
 export default router;

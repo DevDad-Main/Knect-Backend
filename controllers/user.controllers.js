@@ -280,7 +280,7 @@ export const getUserConnections = async (req, res) => {
       )
     ).map((connection) => connection.from_user_id);
 
-    res
+    return res
       .status(200)
       .json(
         new ApiResponse(
@@ -327,14 +327,3 @@ export const acceptUserConnections = async (req, res) => {
   }
 };
 //#endregion
-
-export {
-  getUser,
-  updateUser,
-  discoverUsers,
-  followUser,
-  unfollowUser,
-  sendConnectionRequest,
-  getUserConnections,
-  acceptUserConnections,
-};
