@@ -295,6 +295,39 @@ export const getUserConnections = async (req, res) => {
 };
 //#endregion
 
+//#region Accept Connection Request
+export const acceptUserConnections = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { id } = req.params;
+
+    const connection = await Connection.findOne({
+      from_user_id: id,
+      to_user_id: userId,
+    });
+
+    if (!connection) {
+      throw new ApiError(404, "Connection not found");
+    }
+
+    const user = await User.findById(userId);
+    user.connections.push(id);
+    await user.save();
+
+    const connectedUser = await User.findById(id);
+    connectedUser.connections.push(userId);
+    await connectedUser.save();
+
+    connection.status = "accepted";
+    await connection.save();
+
+    return res.status(200).json(new ApiResponse(200, "Connection Accepted"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
 export {
   getUser,
   updateUser,
