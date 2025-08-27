@@ -1,0 +1,91 @@
+import { Post } from "../models/Post.models.js";
+import { User } from "../models/User.models.js";
+import { ApiError } from "../utils/ApiError.utils.js";
+import { ApiResponse } from "../utils/ApiResponse.utils.js";
+import { uploadOnImageKit } from "../utils/imageKit.utils.js";
+
+//#region Add Post
+export const addPost = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { content, post_type } = req.body;
+
+    const images = req.files;
+
+    let image_urls = [];
+
+    if (images.length) {
+      image_urls = await Promise.all(
+        images.map(async (image) => {
+          await uploadOnImageKit(image, "1280");
+        }),
+      );
+    }
+
+    await Post.create({
+      user: userId,
+      content,
+      image_urls,
+      post_type,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Post Added Successfully"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+//#region Get Posts
+export const getFeedPosts = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+
+    const user = await User.findById(userId);
+
+    // List of people whos posts we want to show, the user, his connections and following
+    const userIds = [userId, ...user.connections, ...user.following];
+
+    // Then we try to find these posts in our DB and return them to display
+    const posts = await Post.find({
+      user: { $in: userIds },
+    })
+      .populate("user")
+      .sort({ createdAt: -1 });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, posts, "Posts Fetched Successfully"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+//#region Like Post
+export const likePost = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { postId } = req.body;
+
+    const post = await Post.findById(postId);
+
+    // Removing the like if we have already liked it
+    if (post.likes_count.includes(userId)) {
+      post.likes_count = post.likes_count.filter((user) => user !== userId);
+      await post.save();
+
+      return res.status(200).json(new ApiResponse(200, "Post Unliked"));
+    } else {
+      post.likes_count.push(userId);
+      await post.save();
+
+      return res.status(200).json(new ApiResponse(200, "Post Liked!"));
+    }
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
