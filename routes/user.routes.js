@@ -6,6 +6,6 @@ const router = Router();
 
 router.use(requireAuth());
 
-router.route("/user").get(getUser).post(updateUser);
+router.route("/user").get(getUser).get(discoverUsers).post(updateUser);
 
 export default router;

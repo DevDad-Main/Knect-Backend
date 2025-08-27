@@ -2,6 +2,7 @@ import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
+import escapeRegex from "../utils/regex.utils.js";
 
 //#region Get User
 export const getUser = async (req, res) => {
@@ -110,4 +111,39 @@ export const updateUser = async (req, res) => {
 };
 //#endregion
 
-export { getUser, updateUser };
+//#region Get Users By Input Field
+export const discoverUsers = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { input } = req.body;
+
+    // Escaping certain regex characters (malicious check)
+    const safeQuery = escapeRegex(input);
+
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    // Finding all users that match the search request
+    const users = await User.find({
+      $or: [
+        { username: { $regex: safeQuery, $options: "i" } },
+        { email: { $regex: safeQuery, $options: "i" } },
+        { full_name: { $regex: safeQuery, $options: "i" } },
+        { location: { $regex: safeQuery, $options: "i" } },
+      ],
+    });
+
+    // Filtering out the user who is currently logged in
+    const filteredUsers = users.filter((user) => user._id !== userId);
+
+    return res
+      .state(200)
+      .json(new ApiResponse(200, filteredUsers, "User Successfully Fetched"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+export { getUser, updateUser, discoverUsers };
