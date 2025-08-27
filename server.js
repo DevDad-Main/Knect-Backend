@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.use("/api/inngest", serve({ client: inngest, functions }));
+app.use("/api/inngest", server({ client: inngest, functions }));
 //#endregion
 
 //#region MONGO CONNECTION
