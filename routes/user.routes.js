@@ -1,9 +1,11 @@
 import { requireAuth } from "@clerk/express";
 import { Router } from "express";
-import { getUser } from "../controllers/user.controllers.js";
+import { getUser, updateUser } from "../controllers/user.controllers.js";
 
 const router = Router();
 
-router.get("/user", requireAuth(), getUser);
+router.use(requireAuth());
+
+router.route("/user").get(getUser).post(updateUser);
 
 export default router;
