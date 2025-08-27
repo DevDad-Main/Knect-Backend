@@ -5,6 +5,7 @@ import connectDB from "./db/mongooseDB.js";
 import { inngest, functions } from "./utils/inngest.utils.js";
 import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
+import usersRouter from "./routes/user.routes.js";
 
 //#region CONSTANTS
 const app = express();
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
+app.use("/api/v1/", usersRouter);
 //#endregion
 
 //#region MONGO CONNECTION

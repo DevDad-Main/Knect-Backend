@@ -32,7 +32,7 @@ export const getUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.auth();
-    const { username, bio, location, full_name } = req.body;
+    let { username, bio, location, full_name } = req.body;
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
@@ -139,11 +139,75 @@ export const discoverUsers = async (req, res) => {
 
     return res
       .state(200)
-      .json(new ApiResponse(200, filteredUsers, "User Successfully Fetched"));
+      .json(new ApiResponse(200, filteredUsers, "Users Successfully Fetched"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
 };
 //#endregion
 
-export { getUser, updateUser, discoverUsers };
+//#region Follow User
+export const followUser = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { id } = req.params;
+
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const loggedInUser = await User.findById(id);
+
+    if (!loggedInUser) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (loggedInUser.followers.includes(id)) {
+      throw new ApiError(400, "User is already followed");
+    }
+
+    loggedInUser.following.push(id);
+    await loggedInUser.save();
+
+    const followedUser = await User.findById(id);
+    followedUser.followers.push(userId);
+    await followedUser.save();
+
+    return res
+      .state(200)
+      .json(new ApiResponse(200, "User Successfully Followed"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+//#region Unfollow User
+export const unfollowUser = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { id } = req.params;
+
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const user = await User.findById(userId);
+    user.following = user.following.filter((user) => user !== id);
+    await user.save();
+
+    const unfollowedUser = await User.findById(id);
+    unfollowedUser.followers = unfollowedUser.followers.filter(
+      (user) => user !== userId,
+    );
+    await user.save();
+
+    return res
+      .state(200)
+      .json(new ApiResponse(200, "User Successfully Unfollowed"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+export { getUser, updateUser, discoverUsers, followUser, unfollowUser };
