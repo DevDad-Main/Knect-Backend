@@ -16,10 +16,8 @@ const syncUserCreation = inngest.createFunction(
     let username = email_addresses[0].email_address.split("@")[0];
 
     try {
-      // Check availability of username
-      const user = await User.findOne({ username });
-
-      if (user) {
+      // Ensure username uniqueness (loop until unique)
+      while (await User.findOne({ username })) {
         username = username + Math.floor(Math.random() * 10000);
       }
 
@@ -32,8 +30,10 @@ const syncUserCreation = inngest.createFunction(
       });
 
       await newUser.save();
+      console.log("User Saved!");
     } catch (err) {
-      throw new Error(err);
+      console.error("❌ Error saving user:", err);
+      throw err; // don’t swallow the real error
     }
   },
 );
