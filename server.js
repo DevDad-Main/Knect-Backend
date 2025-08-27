@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import connectDB from "./db/mongooseDB.js";
-import { inngest } from "./utils/inngest.utils.js";
+import { inngest, functions } from "./utils/inngest.utils.js";
+import { serve } from "inngest/express";
 
 //#region CONSTANTS
 const app = express();
@@ -19,7 +20,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.use("/api/inngest", server({ client: inngest, functions }));
+app.use("/api/inngest", serve({ client: inngest, functions }));
 //#endregion
 
 //#region MONGO CONNECTION
