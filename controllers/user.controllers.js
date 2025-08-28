@@ -347,13 +347,16 @@ export const acceptUserConnections = async (req, res) => {
 //#region Get User Profiles
 export const getUserProfile = async (req, res) => {
   try {
+    const { userId } = req.auth();
     const { profileId } = req.body;
     const profile = await User.findById(profileId);
 
     if (!profile) {
       throw new ApiError(404, "User not found");
     }
-    const posts = await Post.find({ user: profileId }).populate("user");
+    const posts = await Post.find({ user: profileId })
+      .populate("user")
+      .sort({ createdAt: -1 });
 
     return res
       .status(200)
