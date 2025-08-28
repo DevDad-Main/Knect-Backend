@@ -75,9 +75,10 @@ const syncUserDeletion = inngest.createFunction(
     const { id } = event.data;
 
     const userToDelete = await User.findByIdAndDelete(id);
+    console.log("Tried deleting:", id, "Result:", userToDelete);
 
     if (userToDelete) {
-      console.log("User deleted successfully");
+      return { message: "User Deleted Successfully" };
     }
   },
 );
