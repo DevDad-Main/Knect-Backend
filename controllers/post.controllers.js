@@ -17,7 +17,7 @@ export const addPost = async (req, res) => {
     if (images.length) {
       image_urls = await Promise.all(
         images.map(async (image) => {
-          await uploadOnImageKit(image, "1280");
+          return await uploadOnImageKit(image, "1280");
         }),
       );
     }
