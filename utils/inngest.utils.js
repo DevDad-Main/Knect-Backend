@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import { User } from "../models/User.models.js";
 import { Story } from "../models/Story.models.js";
 import { Connection } from "../models/Connection.models.js";
+import { Message } from "../models/Message.models.js";
 import sendEmail from "./nodemailer.utils.js";
 
 export const inngest = new Inngest({ id: "knect-app" });
@@ -152,10 +153,48 @@ const deleteStory = inngest.createFunction(
 );
 //#endregion
 
+//#region Send Notification of Unseen Messages
+export const sendUnseenMessageNotification = inngest.createFunction(
+  { id: "send-unseen-message-notification" },
+  { cron: "TZ=America/New_York 0 9 * * *" }, // Every day at 9am
+  async ({ step }) => {
+    const messages = await Message.find({ seen: false }).populate("to_user_id");
+
+    const unseenCount = {};
+
+    messages.map((message) => {
+      unseenCount[message.to_user_id._id] =
+        (unseenCount[message.to_user_id._id] || 0) + 1;
+    });
+
+    for (const userId in unseenCount) {
+      const user = await User.findById(userId);
+      const subject = `📩 You have ${unseenCount[userId]} new messages`;
+      const body = `
+      <div style="font-family: Arial, sans-serif; padding: 20px">
+        <h2>Hello ${user.full_name},</h2>
+        <p>You have ${unseenCount[userId]} new messages</p>
+        <p>Click <a href="${process.env.FRONTEND_URL}/messages" style="color: #10b981;">here</a> to view them</p>
+        <br/>
+        <p>Thanks,<br/>Knect Team - Stay Connected</p>
+      </div>`;
+
+      await sendEmail({
+        to: user.email,
+        subject,
+        body,
+      });
+    }
+    return { message: "Notification Sent" };
+  },
+);
+//#endregion
+
 export const functions = [
   syncUserCreation,
   syncUserUpdation,
   syncUserDeletion,
   sendNewConnectionRequestReminder,
   deleteStory,
+  sendUnseenMessageNotification,
 ];
