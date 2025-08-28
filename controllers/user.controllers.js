@@ -13,8 +13,6 @@ export const getUser = async (req, res) => {
   try {
     const { userId } = getAuth(req);
 
-    console.log(userId);
-
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
     }
