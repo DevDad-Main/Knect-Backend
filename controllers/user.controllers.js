@@ -50,8 +50,6 @@ export const updateUser = async (req, res) => {
       throw new ApiError(404, "User not found");
     }
 
-    console.log(req.body);
-
     !username && (username = userToUpdate.username);
     !bio && (bio = userToUpdate.bio);
     !location && (location = userToUpdate.location);
@@ -104,13 +102,18 @@ export const updateUser = async (req, res) => {
     userToUpdate.bio = bio;
     userToUpdate.location = location;
     userToUpdate.full_name = full_name;
-    userToUpdate.profile_picture = profile_picture;
-    userToUpdate.cover_photo = cover;
+    if (profile_picture) {
+      userToUpdate.profile_picture = profile_picture;
+    }
+
+    if (cover) {
+      userToUpdate.cover_photo = cover;
+    }
 
     await userToUpdate.save();
 
     return res
-      .state(200)
+      .status(200)
       .json(
         new ApiResponse(200, userToUpdate, "User Updated Successfully Fetched"),
       );
