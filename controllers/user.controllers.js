@@ -1,5 +1,6 @@
 import { Connection } from "../models/Connection.models.js";
 import { User } from "../models/User.models.js";
+import { Post } from "../models/Post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
@@ -322,6 +323,27 @@ export const acceptUserConnections = async (req, res) => {
     await connection.save();
 
     return res.status(200).json(new ApiResponse(200, "Connection Accepted"));
+  } catch (error) {
+    throw new ApiError(401, "Unauthorized", error.message);
+  }
+};
+//#endregion
+
+//#region Get User Profiles
+export const getUserProfile = async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    const profile = await User.findById(profileId);
+
+    if (!profile) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const posts = await Post.find({ user: profileId }).populate("user");
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { profile, posts }, "User Profile Fetched"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }

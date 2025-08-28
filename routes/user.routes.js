@@ -9,6 +9,7 @@ import {
   sendConnectionRequest,
   getUserConnections,
   acceptUserConnections,
+  getUserProfile,
 } from "../controllers/user.controllers.js";
 import { upload } from "../utils/multer.utils.js";
 
@@ -32,5 +33,6 @@ router.post("/follow/:id", followUser);
 router.post("/unfollow/:id", unfollowUser);
 router.post("/connect", sendConnectionRequest);
 router.post("/accept", acceptUserConnections);
+router.post("/profiles", getUserProfile);
 
 export default router;

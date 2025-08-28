@@ -6,6 +6,8 @@ import { inngest, functions } from "./utils/inngest.utils.js";
 import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
 import usersRouter from "./routes/user.routes.js";
+import postsRouter from "./routes/post.routes.js";
+import storysRouter from "./routes/story.routes.js";
 
 //#region CONSTANTS
 const app = express();
@@ -26,7 +28,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
-app.use("/api/v1/", usersRouter);
+app.use("/api/v1/user", usersRouter);
+app.use("/api/v1/post", postsRouter);
+app.use("/api/v1/story", storysRouter);
 //#endregion
 
 //#region MONGO CONNECTION
