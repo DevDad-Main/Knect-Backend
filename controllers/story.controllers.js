@@ -2,6 +2,7 @@ import { Story } from "../models/Story.models.js";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
+import { inngest } from "../utils/inngest.utils.js";
 
 //#region Add A Story
 export const addStory = async (req, res) => {
@@ -12,7 +13,7 @@ export const addStory = async (req, res) => {
     const media = req.file;
     let media_url = "";
 
-    if (media_type == "image" || media_type == "video") {
+    if (media_type === "image" || media_type === "video") {
       media_url = await uploadOnImageKit(media, "1280");
     }
 
@@ -22,6 +23,12 @@ export const addStory = async (req, res) => {
       media_url,
       media_type,
       background_color,
+    });
+
+    // Trigger Inngest function to delete story in 24 hours
+    await inngest.send({
+      name: "app/story.delete",
+      data: { storyId: story._id },
     });
 
     return res

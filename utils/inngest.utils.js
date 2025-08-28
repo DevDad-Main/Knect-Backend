@@ -1,5 +1,6 @@
 import { Inngest } from "inngest";
 import { User } from "../models/User.models.js";
+import { Story } from "../models/Story.models.js";
 import { Connection } from "../models/Connection.models.js";
 import sendEmail from "./nodemailer.utils.js";
 
@@ -84,7 +85,7 @@ const syncUserDeletion = inngest.createFunction(
 //#region Send Email when a new connection is created
 const sendNewConnectionRequestReminder = inngest.createFunction(
   { id: "send-new-connection-reminder" },
-  { event: "app/connection-request" },
+  { event: "app/connection.request" },
   async ({ event, step }) => {
     const { connectionId } = event.data;
     await step.run("send-connection-request-mail", async () => {
@@ -134,9 +135,27 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
 );
 //#endregion
 
+//#region Background Task -> Delete A Story After 24 Hours
+const deleteStory = inngest.createFunction(
+  { id: "story-delete" },
+  { event: "app/story.delete" },
+  async ({ event, step }) => {
+    const { storyId } = event.data;
+
+    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-for-24-hours", in24Hours);
+    await step.run("delete-story", async () => {
+      await Story.findByIdAndDelete(storyId);
+      return { message: "Story Deleted" };
+    });
+  },
+);
+//#endregion
+
 export const functions = [
   syncUserCreation,
   syncUserUpdation,
   syncUserDeletion,
   sendNewConnectionRequestReminder,
+  deleteStory,
 ];

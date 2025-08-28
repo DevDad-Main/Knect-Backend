@@ -1,4 +1,5 @@
 import { Connection } from "../models/Connection.models.js";
+import { inngest } from "../utils/inngest.utils.js";
 import { User } from "../models/User.models.js";
 import { Post } from "../models/Post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
@@ -243,10 +244,16 @@ export const sendConnectionRequest = async (req, res) => {
     });
 
     if (!connection) {
-      await Connection.create({
+      const newConnection = await Connection.create({
         from_user_id: userId,
         to_user_id: id,
       });
+
+      await inngest.send({
+        name: "app/connection.request",
+        data: { connectionId: newConnection._id },
+      });
+
       return res
         .status(200)
         .json(new ApiResponse(200, "Connection Request Sent"));
