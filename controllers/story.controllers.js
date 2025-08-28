@@ -3,6 +3,7 @@ import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { inngest } from "../utils/inngest.utils.js";
+import { getAuth } from "@clerk/express";
 
 //#region Add A Story
 export const addStory = async (req, res) => {
@@ -43,11 +44,18 @@ export const addStory = async (req, res) => {
 //#region Get Stories
 export const getStories = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      throw new ApiError(401, "User Not Authenticated");
+    }
     const user = await User.findById(userId);
 
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
     // Get Users connections and followings
-    const userIds = [user, ...user.connections, ...user.following];
+    const userIds = [user._id, ...user.connections, ...user.following];
 
     // We then search our stories DB for these users stories
     const stories = await Story.find({
@@ -60,7 +68,7 @@ export const getStories = async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, stories, "Story Added Successfully"));
   } catch (error) {
-    throw new ApiError(404, "Not Authorized", error.message);
+    return res.status(500).json(new ApiError(500, error.message));
   }
 };
 //#endregion
