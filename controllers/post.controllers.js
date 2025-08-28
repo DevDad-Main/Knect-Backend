@@ -77,12 +77,12 @@ export const toggleLike = async (req, res) => {
       post.likes_count = post.likes_count.filter((user) => user !== userId);
       await post.save();
 
-      return res.status(200).json(new ApiResponse(200, "Post Unliked"));
+      return res.status(200).json(new ApiResponse(200, {}, "Post Unliked"));
     } else {
       post.likes_count.push(userId);
       await post.save();
 
-      return res.status(200).json(new ApiResponse(200, "Post Liked!"));
+      return res.status(200).json(new ApiResponse(200, {}, "Post Liked!"));
     }
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
