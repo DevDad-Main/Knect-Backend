@@ -16,9 +16,9 @@ import { upload } from "../utils/multer.utils.js";
 
 const router = Router();
 
-router.use(requireAuth());
+// router.use(requireAuth());
 
-router.get("/user", getUser);
+router.get("/user", requireAuth(), getUser);
 router.get("/discover", discoverUsers);
 router.get("/connections", getUserConnections);
 router.get("/recent-messages", getUserRecentMessages);

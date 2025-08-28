@@ -6,11 +6,14 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import escapeRegex from "../utils/regex.utils.js";
+import { getAuth } from "@clerk/express";
 
 //#region Get User
 export const getUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
+
+    console.log(userId);
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
@@ -22,8 +25,10 @@ export const getUser = async (req, res) => {
       throw new ApiError(404, "User not found");
     }
 
+    console.log("Current logged in user is ", user);
+
     return res
-      .state(200)
+      .status(200)
       .json(new ApiResponse(200, user, "User Successfully Fetched"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);

@@ -13,11 +13,26 @@ import messagesRouter from "./routes/message.routes.js";
 //#region CONSTANTS
 const app = express();
 const PORT = process.env.PORT || 4000;
+const allowedOrigins = process.env.CORS_ORIGIN.split(","); // split comma-separated string
 //#endregion
 
 //#region MIDDLEWARE
 app.use(express.json());
-app.use(cors());
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["PATCH", "POST", "PUT", "GET", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Access-Control-Allow-Headers",
+      // "Access-Control-Allow-Origin",
+    ],
+    credentials: true,
+    // optionsSuccessStatus: 200,
+  }),
+);
 
 //INFO: The clerkMiddleware() function checks the request's cookies and headers for a session JWT and, if found, attaches the object to the request object under the auth key.
 app.use(clerkMiddleware());
