@@ -65,7 +65,7 @@ export const getFeedPosts = async (req, res) => {
 //#endregion
 
 //#region Like Post
-export const likePost = async (req, res) => {
+export const toggleLike = async (req, res) => {
   try {
     const { userId } = req.auth();
     const { postId } = req.body;
