@@ -8,6 +8,7 @@ import { clerkMiddleware } from "@clerk/express";
 import usersRouter from "./routes/user.routes.js";
 import postsRouter from "./routes/post.routes.js";
 import storysRouter from "./routes/story.routes.js";
+import messagesRouter from "./routes/message.routes.js";
 
 //#region CONSTANTS
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/v1/user", usersRouter);
 app.use("/api/v1/post", postsRouter);
 app.use("/api/v1/story", storysRouter);
+app.use("/api/v1/message", messagesRouter);
 //#endregion
 
 //#region MONGO CONNECTION

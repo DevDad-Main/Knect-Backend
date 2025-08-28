@@ -11,6 +11,7 @@ import {
   acceptUserConnections,
   getUserProfile,
 } from "../controllers/user.controllers.js";
+import { getUserRecentMessages } from "../controllers/message.controllers.js";
 import { upload } from "../utils/multer.utils.js";
 
 const router = Router();
@@ -20,6 +21,7 @@ router.use(requireAuth());
 router.get("/user", getUser);
 router.get("/discover", discoverUsers);
 router.get("/connections", getUserConnections);
+router.get("/recent-messages", getUserRecentMessages);
 
 router.post(
   "/update-user",
