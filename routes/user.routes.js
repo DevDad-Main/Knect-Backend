@@ -18,7 +18,7 @@ const router = Router();
 
 // router.use(requireAuth());
 
-router.get("/user", requireAuth(), getUser);
+router.get("/user", getUser);
 router.get("/discover", discoverUsers);
 router.get("/connections", getUserConnections);
 router.get("/recent-messages", getUserRecentMessages);
@@ -29,6 +29,7 @@ router.post(
     { name: "profile", maxCount: 1 },
     { name: "cover", maxCount: 1 },
   ]),
+
   updateUser,
 );
 router.post("/follow/:id", followUser);

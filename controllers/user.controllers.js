@@ -11,7 +11,7 @@ import { getAuth } from "@clerk/express";
 //#region Get User
 export const getUser = async (req, res) => {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = req.auth();
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
@@ -41,7 +41,7 @@ export const updateUser = async (req, res) => {
     let { username, bio, location, full_name } = req.body;
 
     if (!userId) {
-      throw new ApiError(401, "Unauthorized");
+      throw new ApiError(401, "User Not Authenticated");
     }
 
     const userToUpdate = await User.findById(userId);
@@ -49,6 +49,8 @@ export const updateUser = async (req, res) => {
     if (!userToUpdate) {
       throw new ApiError(404, "User not found");
     }
+
+    console.log(req.body);
 
     !username && (username = userToUpdate.username);
     !bio && (bio = userToUpdate.bio);
@@ -113,7 +115,7 @@ export const updateUser = async (req, res) => {
         new ApiResponse(200, userToUpdate, "User Updated Successfully Fetched"),
       );
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    throw new ApiError(401, error.message);
   }
 };
 //#endregion
@@ -348,7 +350,6 @@ export const getUserProfile = async (req, res) => {
     if (!profile) {
       throw new ApiError(404, "User not found");
     }
-
     const posts = await Post.find({ user: profileId }).populate("user");
 
     return res
