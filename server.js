@@ -19,8 +19,6 @@ const allowedOrigins = process.env.CORS_ORIGIN.split(","); // split comma-separa
 //#endregion
 
 //#region MIDDLEWARE
-app.use(express.json());
-app.use(cookieParser());
 app.use(
   cors({
     origin: allowedOrigins,
@@ -36,6 +34,14 @@ app.use(
   }),
 );
 
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "16kb",
+  }),
+);
 //INFO: The clerkMiddleware() function checks the request's cookies and headers for a session JWT and, if found, attaches the object to the request object under the auth key.
 // app.use(clerkMiddleware());
 //#endregion

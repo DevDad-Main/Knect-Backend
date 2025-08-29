@@ -174,7 +174,7 @@ export const loginUser = async (req, res) => {
 //#endregion
 
 //#region Logout User
-const logoutUser = async (req, res) => {
+export const logoutUser = async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
@@ -189,7 +189,7 @@ const logoutUser = async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "none",
   };
 
@@ -234,14 +234,13 @@ export const getUser = async (req, res) => {
 //#region Update User Details
 export const updateUser = async (req, res) => {
   try {
-    const userId = req.user;
     let { username, bio, location, full_name } = req.body;
 
-    if (!userId) {
+    if (!req.user) {
       throw new ApiError(401, "User Not Authenticated");
     }
 
-    const userToUpdate = await User.findById(userId);
+    const userToUpdate = await User.findById(req.user?._id);
 
     if (!userToUpdate) {
       throw new ApiError(404, "User not found");
@@ -315,7 +314,10 @@ export const updateUser = async (req, res) => {
         new ApiResponse(200, userToUpdate, "User Updated Successfully Fetched"),
       );
   } catch (error) {
-    throw new ApiError(401, error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
@@ -548,7 +550,7 @@ export const acceptUserConnections = async (req, res) => {
 //#region Get User Profiles
 export const getUserProfile = async (req, res) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
 
     if (!isValidObjectId(id)) {
       throw new ApiError(400, "Invalid User Id");

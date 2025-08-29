@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   discoverUsers,
   loginUser,
+  logoutUser,
   registerUser,
   getUser,
   updateUser,
@@ -27,6 +28,7 @@ router.post(
   ]),
   registerUser,
 );
+router.post("/logout", verifyJWT, logoutUser);
 
 router.get("/user", verifyJWT, getUser);
 router.get("/connections", getUserConnections);
