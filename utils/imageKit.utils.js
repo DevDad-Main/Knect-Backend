@@ -8,26 +8,27 @@ var imagekit = new ImageKit({
   urlEndpoint: `https://ik.imagekit.io/${process.env.IMAGEKIT_ID}/`,
 });
 
-export async function uploadOnImageKit(image, width) {
-  const buffer = fs.readFileSync(image.path);
+export async function uploadOnImageKit(
+  file,
+  width,
+  format = "webp",
+  media_type = "image",
+) {
+  const buffer = fs.readFileSync(file.path);
   const response = await imagekit.upload({
     file: buffer,
-    fileName: image.originalname,
+    fileName: file.originalname,
   });
+
+  // Only apply transformations for images
+  const transformations =
+    media_type === "image"
+      ? [{ quality: "auto" }, { format: format }, { width: width }]
+      : [];
 
   const url = imagekit.url({
     path: response.filePath,
-    transformation: [
-      {
-        quality: "auto",
-      },
-      {
-        format: "webp",
-      },
-      {
-        width: width,
-      },
-    ],
+    transformation: transformations,
   });
 
   return url;

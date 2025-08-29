@@ -1,6 +1,7 @@
 import { Story } from "../models/Story.models.js";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
+import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { inngest } from "../utils/inngest.utils.js";
 import { getAuth } from "@clerk/express";
@@ -14,8 +15,10 @@ export const addStory = async (req, res) => {
     const media = req.file;
     let media_url = "";
 
-    if (media_type === "image" || media_type === "video") {
+    if (media_type === "image") {
       media_url = await uploadOnImageKit(media, "1280");
+    } else if (media_type === "video") {
+      media_url = await uploadOnImageKit(media, undefined, undefined, "video");
     }
 
     const story = await Story.create({
@@ -44,7 +47,7 @@ export const addStory = async (req, res) => {
 //#region Get Stories
 export const getStories = async (req, res) => {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = req.auth();
 
     if (!userId) {
       throw new ApiError(401, "User Not Authenticated");
@@ -63,6 +66,8 @@ export const getStories = async (req, res) => {
     })
       .populate("user")
       .sort({ createdAt: -1 });
+
+    console.log("Stories Fetched Successfully", stories);
 
     return res
       .status(200)
