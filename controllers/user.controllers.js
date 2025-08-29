@@ -6,9 +6,14 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import escapeRegex from "../utils/regex.utils.js";
+import bcrypt from "bcryptjs";
+
+//#region CONSTANTS
+const SALT_ROUNDS = 12;
+//#endregion
 
 //#region Register User
-const registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   //NOTE: We also have the image files aswell avatar and cover image but they get handled seperately by multer
 
   const { firstName, lastName, email, username, password } = req.body;
@@ -20,37 +25,24 @@ const registerUser = async (req, res) => {
   // }
 
   const profilePicture = req.files?.profile_picture?.[0];
-  const coverImage = req.files?.cover?.[0];
-
-  // NOTE: ALlowing the coverImage and avatar to default and then user can update this later in settings.
-  // NOTE: This will allow us split the users images into seperate files using their ids
-  // let coverImage = "";
-
-  // if (!avatarLocalPath) {
-  //   throw new ApiError(400, "Avatar file is missing.");
-  // }
-
-  // const avatar = await uploadOnCloudinary(avatarLocalPath);
-  // if (coverImage) {
-  //   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-  // }
+  const coverImage = req.files?.cover_photo?.[0];
 
   let profile_picture;
   let cover_photo;
 
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const user = new User.create({
-      full_name: `${firstName === " " ? "First" : firstName} ${lastName === " " ? "First" : lastName}`,
-      email: email,
-      username: username,
+    const user = new User({
+      full_name: `${firstName === " " ? "First" : firstName} ${lastName === " " ? "Last" : lastName}`,
+      email,
+      username,
       password: hashedPassword,
     });
 
-    //#region Avatar Upload -> They can be not set by default
+    //#region Profile_Picture and Cover_Photo Upload -> They can be not set by default
     try {
       profile_picture = await uploadOnImageKit(profilePicture, "512");
-      cover = await uploadOnImageKit(coverImage, "1280");
+      cover_photo = await uploadOnImageKit(coverImage, "1280");
     } catch (error) {
       throw new ApiError(
         500,
@@ -87,7 +79,7 @@ const registerUser = async (req, res) => {
 //#endregion
 
 //#region Login User
-const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   // const errors = validationResult(req);

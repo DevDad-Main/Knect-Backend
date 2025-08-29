@@ -2,6 +2,8 @@ import { requireAuth } from "@clerk/express";
 import { Router } from "express";
 import {
   discoverUsers,
+  loginUser,
+  registerUser,
   getUser,
   updateUser,
   followUser,
@@ -16,6 +18,16 @@ import { upload } from "../utils/multer.utils.js";
 import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 
 const router = Router();
+
+router.post("/login", loginUser);
+router.post(
+  "/register",
+  upload.fields([
+    { name: "profile_picture", maxCount: 1 },
+    { name: "cover_photo", maxCount: 1 },
+  ]),
+  registerUser,
+);
 
 router.get("/user", getUser);
 router.get("/connections", getUserConnections);

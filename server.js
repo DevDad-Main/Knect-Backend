@@ -63,40 +63,37 @@ const io = new Server(server, {
 });
 
 const onlineUsers = new Map();
+
 io.on("connection", (socket) => {
-  // Get userId from query (no auth check)
-  const { userId } = socket.handshake.query;
+  const token = socket.handshake.query.token;
+  // if (!userId) return;
 
-  if (!userId) {
-    console.log("Socket connection rejected: no userId");
-    socket.disconnect();
-    return;
-  }
+  console.log(`Socket connected: ${socket.id} (user: ${userId})`);
 
-  console.log(`✅ Socket connected: ${socket.id} (user: ${userId})`);
-
-  // Track online users
   const userSet = onlineUsers.get(userId) ?? new Set();
   userSet.add(socket.id);
   onlineUsers.set(userId, userSet);
 
-  // Handle private messages
-  socket.on("send_message", (message) => {
-    const { to_user_id } = message;
+  // Receive messages
+  socket.on("private_message", (payload) => {
+    const { to_user_id, text } = payload;
+    console.log(`Message from ${userId} to ${to_user_id}: ${text}`);
 
-    console.log(`📩 Message from ${userId} to ${to_user_id}: ${message.text}`);
-
-    // Send to recipient if online
+    // Emit to recipient if online
     const destSockets = onlineUsers.get(to_user_id);
     if (destSockets) {
       for (const sid of destSockets) {
-        io.to(sid).emit("receive_message", message);
+        io.to(sid).emit("receive_message", {
+          from_user_id: userId,
+          to_user_id,
+          text,
+        });
       }
     }
   });
 
   socket.on("disconnect", () => {
-    console.log(`❌ Socket disconnected: ${socket.id}`);
+    console.log(`Socket disconnected: ${socket.id}`);
     const userSet = onlineUsers.get(userId);
     if (userSet) {
       userSet.delete(socket.id);
@@ -105,44 +102,6 @@ io.on("connection", (socket) => {
     }
   });
 });
-// io.on("connection", (socket) => {
-//   const token = socket.handshake.query.token;
-//   // if (!userId) return;
-//
-//   console.log(`Socket connected: ${socket.id} (user: ${userId})`);
-//
-//   const userSet = onlineUsers.get(userId) ?? new Set();
-//   userSet.add(socket.id);
-//   onlineUsers.set(userId, userSet);
-//
-//   // Receive messages
-//   socket.on("private_message", (payload) => {
-//     const { to_user_id, text } = payload;
-//     console.log(`Message from ${userId} to ${to_user_id}: ${text}`);
-//
-//     // Emit to recipient if online
-//     const destSockets = onlineUsers.get(to_user_id);
-//     if (destSockets) {
-//       for (const sid of destSockets) {
-//         io.to(sid).emit("receive_message", {
-//           from_user_id: userId,
-//           to_user_id,
-//           text,
-//         });
-//       }
-//     }
-//   });
-//
-//   socket.on("disconnect", () => {
-//     console.log(`Socket disconnected: ${socket.id}`);
-//     const userSet = onlineUsers.get(userId);
-//     if (userSet) {
-//       userSet.delete(socket.id);
-//       if (userSet.size === 0) onlineUsers.delete(userId);
-//       else onlineUsers.set(userId, userSet);
-//     }
-//   });
-// });
 
 app.set("io", io);
 //#endregion
