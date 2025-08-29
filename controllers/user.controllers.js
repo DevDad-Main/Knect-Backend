@@ -367,22 +367,19 @@ export const followUser = async (req, res) => {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const loggedInUser = await User.findById(userId);
-
-    if (!loggedInUser) {
-      throw new ApiError(404, "User not found");
+    if (userId.toString() === id.toString()) {
+      throw new ApiError(400, "You cannot follow yourself");
     }
 
-    if (loggedInUser.followers.includes(id)) {
-      throw new ApiError(400, "User is already followed");
-    }
+    // add to "following" (no duplicates thanks to $addToSet)
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { following: id },
+    });
 
-    loggedInUser.following.push(id);
-    await loggedInUser.save();
-
-    const followedUser = await User.findById(id);
-    followedUser.followers.push(userId);
-    await followedUser.save();
+    // add to "followers"
+    await User.findByIdAndUpdate(id, {
+      $addToSet: { followers: userId },
+    });
 
     return res
       .status(200)
@@ -396,22 +393,22 @@ export const followUser = async (req, res) => {
 //#region Unfollow User
 export const unfollowUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { id } = req.body;
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const user = await User.findById(userId);
-    user.following = user.following.filter((user) => user !== id);
-    await user.save();
+    // Remove unfollowed user from your following
+    await User.findByIdAndUpdate(userId, {
+      $pull: { following: id },
+    });
 
-    const unfollowedUser = await User.findById(id);
-    unfollowedUser.followers = unfollowedUser.followers.filter(
-      (user) => user !== userId,
-    );
-    await unfollowedUser.save();
+    // Remove you from their followers
+    await User.findByIdAndUpdate(id, {
+      $pull: { followers: userId },
+    });
 
     return res
       .status(200)
