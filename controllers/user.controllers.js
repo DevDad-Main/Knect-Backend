@@ -148,7 +148,7 @@ export const discoverUsers = async (req, res) => {
     const filteredUsers = users.filter((user) => user._id !== userId);
 
     return res
-      .state(200)
+      .status(200)
       .json(new ApiResponse(200, filteredUsers, "Users Successfully Fetched"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
@@ -160,7 +160,7 @@ export const discoverUsers = async (req, res) => {
 export const followUser = async (req, res) => {
   try {
     const { userId } = req.auth();
-    const { id } = req.params;
+    const { id } = req.body;
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
@@ -196,7 +196,7 @@ export const followUser = async (req, res) => {
 export const unfollowUser = async (req, res) => {
   try {
     const { userId } = req.auth();
-    const { id } = req.params;
+    const { id } = req.body;
 
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
@@ -293,6 +293,8 @@ export const getUserConnections = async (req, res) => {
         "from_user_id",
       )
     ).map((connection) => connection.from_user_id);
+
+    console.log(connections, followers, following, pendingConnections);
 
     return res
       .status(200)

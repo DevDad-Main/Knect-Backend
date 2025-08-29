@@ -20,7 +20,6 @@ const router = Router();
 // router.use(requireAuth());
 
 router.get("/user", isAuthenticated, getUser);
-router.get("/discover", discoverUsers);
 router.get("/connections", getUserConnections);
 router.get("/recent-messages", getUserRecentMessages);
 
@@ -33,8 +32,9 @@ router.post(
   isAuthenticated,
   updateUser,
 );
-router.post("/follow/:id", followUser);
-router.post("/unfollow/:id", unfollowUser);
+router.post("/discover", isAuthenticated, discoverUsers);
+router.post("/follow", followUser);
+router.post("/unfollow", unfollowUser);
 router.post("/connect", sendConnectionRequest);
 router.post("/accept", acceptUserConnections);
 router.post("/profiles", isAuthenticated, getUserProfile);
