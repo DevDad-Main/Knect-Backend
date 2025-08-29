@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { upload } from "../utils/multer.utils.js";
-import { requireAuth } from "@clerk/express";
 import {
   addPost,
   getFeedPosts,
@@ -9,8 +8,6 @@ import {
 import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 
 const router = Router();
-
-router.use(requireAuth());
 
 router.get("/feed", getFeedPosts);
 router.post("/add", upload.array("images", 4), addPost);

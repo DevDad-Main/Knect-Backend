@@ -1,4 +1,3 @@
-import { requireAuth } from "@clerk/express";
 import { Router } from "express";
 import {
   discoverUsers,
@@ -29,7 +28,7 @@ router.post(
   registerUser,
 );
 
-router.get("/user", getUser);
+router.get("/user", verifyJWT, getUser);
 router.get("/connections", getUserConnections);
 router.get("/recent-messages", getUserRecentMessages);
 

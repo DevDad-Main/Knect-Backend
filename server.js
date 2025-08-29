@@ -4,13 +4,13 @@ import "dotenv/config";
 import connectDB from "./db/mongooseDB.js";
 import { inngest, functions } from "./utils/inngest.utils.js";
 import { serve } from "inngest/express";
-import { clerkMiddleware } from "@clerk/express";
 import usersRouter from "./routes/user.routes.js";
 import postsRouter from "./routes/post.routes.js";
 import storysRouter from "./routes/story.routes.js";
 import messagesRouter from "./routes/message.routes.js";
 import http from "http";
 import { Server } from "socket.io";
+import cookieParser from "cookie-parser";
 
 //#region CONSTANTS
 const app = express();
@@ -20,7 +20,7 @@ const allowedOrigins = process.env.CORS_ORIGIN.split(","); // split comma-separa
 
 //#region MIDDLEWARE
 app.use(express.json());
-
+app.use(cookieParser());
 app.use(
   cors({
     origin: allowedOrigins,

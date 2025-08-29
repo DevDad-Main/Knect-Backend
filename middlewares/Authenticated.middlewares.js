@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 //#region Verify JWT
 //NOTE: Leaving response as empty since we are not sending anything

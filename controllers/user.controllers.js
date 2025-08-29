@@ -12,6 +12,34 @@ import bcrypt from "bcryptjs";
 const SALT_ROUNDS = 12;
 //#endregion
 
+//#region Generate Access And Refresh Token
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new ApiError(500, "User does not exist.");
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    // console.log(accessToken, refreshToken);
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access and refresh tokens",
+      error,
+    );
+  }
+};
+//#endregion
+
 //#region Register User
 export const registerUser = async (req, res) => {
   //NOTE: We also have the image files aswell avatar and cover image but they get handled seperately by multer
@@ -88,17 +116,18 @@ export const loginUser = async (req, res) => {
   //   return res.status(400).json({ errors: errors.array() });
   // }
 
-  // if (!username.trim() || !password.trim()) {
-  //   throw new ApiError(400, "Username and Password is required");
-  // }
+  if (!username.trim() || !password.trim()) {
+    throw new ApiError(400, "Username and Password is required");
+  }
   const user = await User.findOne({ username: username });
-  // const user = await User.findOne({ $or: [
+  // const user = await User.findOne({
+  //   $or: [
   //     {
   //       username,
   //     },
-  // {
-  //   email,
-  // },
+  //     {
+  //       email,
+  //     },
   //   ],
   // });
 
@@ -179,8 +208,9 @@ const logoutUser = async (req, res) => {
 //#region Get User
 export const getUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
 
+    console.log(userId);
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
     }

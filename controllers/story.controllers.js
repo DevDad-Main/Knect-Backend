@@ -4,12 +4,11 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { inngest } from "../utils/inngest.utils.js";
-import { getAuth } from "@clerk/express";
 
 //#region Add A Story
 export const addStory = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = req.user;
     const { content, media_type, background_color } = req.body;
 
     const media = req.file;
