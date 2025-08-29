@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import "dotenv/config";
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +20,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
     },
     bio: {
       type: String,
@@ -59,5 +65,36 @@ const userSchema = new mongoose.Schema(
     minimize: false,
   },
 );
+
+//#region Generate Access Token
+//NOTE: Whenever the user has logged in we will send a refresh token and access token.
+//NOTE: JWT Tokens
+userSchema.method("generateAccessToken", function () {
+  //NOTE: Short lived access token -> We will define the expiry time
+  return jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+      full_name: this.full_name,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
+  );
+});
+//#endregion
+
+//#region Generate Refresh Token
+userSchema.method("generateRefreshToken", function () {
+  //NOTE: Short lived access token -> We will define the expiry time
+  return jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
+  );
+});
+//#endregion
 
 export const User = mongoose.model("User", userSchema);

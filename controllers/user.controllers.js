@@ -6,7 +6,183 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import escapeRegex from "../utils/regex.utils.js";
-import { getAuth } from "@clerk/express";
+
+//#region Register User
+const registerUser = async (req, res) => {
+  //NOTE: We also have the image files aswell avatar and cover image but they get handled seperately by multer
+
+  const { firstName, lastName, email, username, password } = req.body;
+
+  // const errors = validationResult(req);
+  //
+  // if (!errors.isEmpty()) {
+  //   return res.status(400).json({ errors: errors.array() });
+  // }
+
+  const profilePicture = req.files?.profile_picture?.[0];
+  const coverImage = req.files?.cover?.[0];
+
+  // NOTE: ALlowing the coverImage and avatar to default and then user can update this later in settings.
+  // NOTE: This will allow us split the users images into seperate files using their ids
+  // let coverImage = "";
+
+  // if (!avatarLocalPath) {
+  //   throw new ApiError(400, "Avatar file is missing.");
+  // }
+
+  // const avatar = await uploadOnCloudinary(avatarLocalPath);
+  // if (coverImage) {
+  //   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  // }
+
+  let profile_picture;
+  let cover_photo;
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const user = new User.create({
+      full_name: `${firstName === " " ? "First" : firstName} ${lastName === " " ? "First" : lastName}`,
+      email: email,
+      username: username,
+      password: hashedPassword,
+    });
+
+    //#region Avatar Upload -> They can be not set by default
+    try {
+      profile_picture = await uploadOnImageKit(profilePicture, "512");
+      cover = await uploadOnImageKit(coverImage, "1280");
+    } catch (error) {
+      throw new ApiError(
+        500,
+        "Failed to upload Profile picture or cover image.",
+      );
+    }
+    //#endregion
+
+    user.profile_picture = profile_picture || "";
+    user.cover_photo = cover_photo || "";
+
+    await user.save();
+    //NOTE: Returning a response to the front end
+    return res
+      .status(201)
+      .json(new ApiResponse(200, user, "User registered successfully"));
+  } catch (error) {
+    console.log("User Creation Failed: ", error);
+
+    // if (avatar) {
+    //   await deleteFromCloudinary(avatar.public_id);
+    // }
+    // if (coverImage) {
+    //   await deleteFromCloudinary(coverImage.public_id);
+    // }
+
+    throw new ApiError(
+      500,
+      "Something went wrong while registering a new user and image files were deleted",
+      error,
+    );
+  }
+};
+//#endregion
+
+//#region Login User
+const loginUser = async (req, res) => {
+  const { username, password } = req.body;
+
+  // const errors = validationResult(req);
+  //
+  // if (!errors.isEmpty()) {
+  //   return res.status(400).json({ errors: errors.array() });
+  // }
+
+  // if (!username.trim() || !password.trim()) {
+  //   throw new ApiError(400, "Username and Password is required");
+  // }
+  const user = await User.findOne({ username: username });
+  // const user = await User.findOne({ $or: [
+  //     {
+  //       username,
+  //     },
+  // {
+  //   email,
+  // },
+  //   ],
+  // });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPassValid = await bcrypt.compare(password, user.password);
+
+  if (!isPassValid) {
+    throw new ApiError(400, "Invalid Password");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id,
+  );
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken",
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  };
+
+  return (
+    res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      //NOTE: Refresh token is only normally set in the cookie
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { user: loggedInUser, accessToken, refreshToken },
+          "User logged in successfully",
+        ),
+      )
+  );
+};
+//#endregion
+
+//#region Logout User
+const logoutUser = async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      //NOTE: Allows us to set and change any property, in this case it will be the refresh token
+      $set: {
+        refreshToken: undefined, // NOTE: Depending on the MongoDB version, we can use "" empty string or null or undefined
+      },
+    },
+
+    { new: true }, //NOTE: Returns us the updated user
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+  };
+
+  return (
+    res
+      .status(200)
+      //NOTE: Using a method called .clearCookie allowing us to clear the cookies one by one
+      .clearCookie("accessToken", options)
+      //NOTE: Using a method called .clearCookie allowing us to clear the cookies one by one
+      .clearCookie("refreshToken", options)
+      //NOTE: Here we just send the default 200 resonse
+      .json(new ApiResponse(200, user, "Logout successful"))
+  );
+};
+//#endregion
 
 //#region Get User
 export const getUser = async (req, res) => {

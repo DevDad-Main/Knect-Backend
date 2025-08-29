@@ -9,6 +9,8 @@ import usersRouter from "./routes/user.routes.js";
 import postsRouter from "./routes/post.routes.js";
 import storysRouter from "./routes/story.routes.js";
 import messagesRouter from "./routes/message.routes.js";
+import http from "http";
+import { Server } from "socket.io";
 
 //#region CONSTANTS
 const app = express();
@@ -35,7 +37,7 @@ app.use(
 );
 
 //INFO: The clerkMiddleware() function checks the request's cookies and headers for a session JWT and, if found, attaches the object to the request object under the auth key.
-app.use(clerkMiddleware());
+// app.use(clerkMiddleware());
 //#endregion
 
 //#region ENDPOINTS
@@ -50,10 +52,105 @@ app.use("/api/v1/story", storysRouter);
 app.use("/api/v1/message", messagesRouter);
 //#endregion
 
+//#region Socket IO;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  },
+});
+
+const onlineUsers = new Map();
+io.on("connection", (socket) => {
+  // Get userId from query (no auth check)
+  const { userId } = socket.handshake.query;
+
+  if (!userId) {
+    console.log("Socket connection rejected: no userId");
+    socket.disconnect();
+    return;
+  }
+
+  console.log(`✅ Socket connected: ${socket.id} (user: ${userId})`);
+
+  // Track online users
+  const userSet = onlineUsers.get(userId) ?? new Set();
+  userSet.add(socket.id);
+  onlineUsers.set(userId, userSet);
+
+  // Handle private messages
+  socket.on("send_message", (message) => {
+    const { to_user_id } = message;
+
+    console.log(`📩 Message from ${userId} to ${to_user_id}: ${message.text}`);
+
+    // Send to recipient if online
+    const destSockets = onlineUsers.get(to_user_id);
+    if (destSockets) {
+      for (const sid of destSockets) {
+        io.to(sid).emit("receive_message", message);
+      }
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`❌ Socket disconnected: ${socket.id}`);
+    const userSet = onlineUsers.get(userId);
+    if (userSet) {
+      userSet.delete(socket.id);
+      if (userSet.size === 0) onlineUsers.delete(userId);
+      else onlineUsers.set(userId, userSet);
+    }
+  });
+});
+// io.on("connection", (socket) => {
+//   const token = socket.handshake.query.token;
+//   // if (!userId) return;
+//
+//   console.log(`Socket connected: ${socket.id} (user: ${userId})`);
+//
+//   const userSet = onlineUsers.get(userId) ?? new Set();
+//   userSet.add(socket.id);
+//   onlineUsers.set(userId, userSet);
+//
+//   // Receive messages
+//   socket.on("private_message", (payload) => {
+//     const { to_user_id, text } = payload;
+//     console.log(`Message from ${userId} to ${to_user_id}: ${text}`);
+//
+//     // Emit to recipient if online
+//     const destSockets = onlineUsers.get(to_user_id);
+//     if (destSockets) {
+//       for (const sid of destSockets) {
+//         io.to(sid).emit("receive_message", {
+//           from_user_id: userId,
+//           to_user_id,
+//           text,
+//         });
+//       }
+//     }
+//   });
+//
+//   socket.on("disconnect", () => {
+//     console.log(`Socket disconnected: ${socket.id}`);
+//     const userSet = onlineUsers.get(userId);
+//     if (userSet) {
+//       userSet.delete(socket.id);
+//       if (userSet.size === 0) onlineUsers.delete(userId);
+//       else onlineUsers.set(userId, userSet);
+//     }
+//   });
+// });
+
+app.set("io", io);
+//#endregion
+
 //#region MONGO CONNECTION
 connectDB()
   .then(
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server is running on port: ${PORT}`);
     }),
   )

@@ -2,39 +2,19 @@ import { Message } from "../models/Message.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 
-//#region SSE Controller -> Switch out later for Socket.io
-// Create an empty object to store the Server Sent event connections
-const connections = {};
-
-export const serverSideController = (req, res) => {
-  const { userId } = req.params;
-  console.log("New Client Added", userId);
-
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-
-  //Add the clients reponse object to the connections object
-  connections[userId] = res;
-
-  // Send an inital event to the client
-  res.write("log: Connected to Server Sent Stream\n\n");
-
-  //Client Disconnection
-  res.on("close", () => {
-    // Remove the clients connection from the connections object
-    delete connections[userId];
-    console.log("Client Disconnected", userId);
-  });
-};
-//#endregion
-
 //#region Send Message
 export const sendMessage = async (req, res) => {
   try {
-    const { userId } = req.auth();
-    const { to_user_id, text } = req.body;
+    // const { userId } = req.auth();
+    const { from_user_id, to_user_id, text } = req.body;
+
+    if (!from_user_id || !to_user_id || !text) {
+      throw new ApiError(
+        400,
+        "User Not Authenticated or Missing required fields",
+      );
+    }
+
     const image = req.file;
     let media_url = "";
 
@@ -44,7 +24,7 @@ export const sendMessage = async (req, res) => {
     }
 
     const message = await Message.create({
-      from_user_id: userId,
+      from_user_id,
       to_user_id,
       text,
       message_type,
@@ -55,11 +35,16 @@ export const sendMessage = async (req, res) => {
       "from_user_id",
     );
 
-    // If other user is online then we can send them the real time message
-    if (connections[to_user_id]) {
-      connections[to_user_id].write(
-        `data: ${JSON.stringify(messgageWithUserData)}\n\n`,
-      );
+    const io = req.app.get("io"); // get io instance
+
+    // after saving message
+    if (io) {
+      const destSockets = onlineUsers.get(to_user_id);
+      if (destSockets) {
+        for (const sid of destSockets) {
+          io.to(sid).emit("receive_message", messgageWithUserData);
+        }
+      }
     }
 
     return res.status(200).json(new ApiResponse(200, message, "Message Sent"));
