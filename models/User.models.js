@@ -39,19 +39,19 @@ const userSchema = new mongoose.Schema(
     },
     followers: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
     following: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
     connections: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],

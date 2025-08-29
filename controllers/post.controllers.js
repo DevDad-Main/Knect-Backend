@@ -7,7 +7,7 @@ import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 //#region Add Post
 export const addPost = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { content, post_type } = req.body;
 
     const images = req.files;
@@ -31,9 +31,12 @@ export const addPost = async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, "Post Added Successfully"));
+      .json(new ApiResponse(200, {}, "Post Added Successfully"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
@@ -41,12 +44,11 @@ export const addPost = async (req, res) => {
 //#region Get Posts
 export const getFeedPosts = async (req, res) => {
   try {
-    const userId = req.user;
-
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user?._id);
+    console.log(user);
 
     // List of people whos posts we want to show, the user, his connections and following
-    const userIds = [userId, ...user.connections, ...user.following];
+    const userIds = [req.user?._id, ...user.connections, ...user.following];
 
     // Then we try to find these posts in our DB and return them to display
     const posts = await Post.find({
@@ -55,6 +57,7 @@ export const getFeedPosts = async (req, res) => {
       .populate("user")
       .sort({ createdAt: -1 });
 
+    console.log("Posts: ", posts);
     return res
       .status(200)
       .json(new ApiResponse(200, posts, "Posts Fetched Successfully"));
