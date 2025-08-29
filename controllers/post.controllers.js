@@ -41,7 +41,7 @@ export const addPost = async (req, res) => {
 //#region Get Posts
 export const getFeedPosts = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user;
 
     const user = await User.findById(userId);
 

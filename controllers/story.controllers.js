@@ -46,7 +46,7 @@ export const addStory = async (req, res) => {
 //#region Get Stories
 export const getStories = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
 
     if (!userId) {
       throw new ApiError(401, "User Not Authenticated");

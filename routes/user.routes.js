@@ -38,6 +38,7 @@ router.post(
     { name: "profile", maxCount: 1 },
     { name: "cover", maxCount: 1 },
   ]),
+  verifyJWT,
   updateUser,
 );
 router.post("/discover", discoverUsers);
@@ -45,6 +46,6 @@ router.post("/follow", followUser);
 router.post("/unfollow", unfollowUser);
 router.post("/connect", sendConnectionRequest);
 router.post("/accept", acceptUserConnections);
-router.post("/profiles", getUserProfile);
+router.post("/profiles/:id", verifyJWT, getUserProfile);
 
 export default router;

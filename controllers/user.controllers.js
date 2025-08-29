@@ -7,6 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import escapeRegex from "../utils/regex.utils.js";
 import bcrypt from "bcryptjs";
+import { isValidObjectId } from "mongoose";
 
 //#region CONSTANTS
 const SALT_ROUNDS = 12;
@@ -233,7 +234,7 @@ export const getUser = async (req, res) => {
 //#region Update User Details
 export const updateUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     let { username, bio, location, full_name } = req.body;
 
     if (!userId) {
@@ -547,13 +548,18 @@ export const acceptUserConnections = async (req, res) => {
 //#region Get User Profiles
 export const getUserProfile = async (req, res) => {
   try {
-    const { profileId } = req.body;
-    const profile = await User.findById(profileId);
+    const id = req.params.id;
+
+    if (!isValidObjectId(id)) {
+      throw new ApiError(400, "Invalid User Id");
+    }
+
+    const profile = await User.findById(id);
 
     if (!profile) {
       throw new ApiError(404, "User not found");
     }
-    const posts = await Post.find({ user: profileId })
+    const posts = await Post.find({ user: id })
       .populate("user")
       .sort({ createdAt: -1 });
 
@@ -561,7 +567,10 @@ export const getUserProfile = async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, { profile, posts }, "User Profile Fetched"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
