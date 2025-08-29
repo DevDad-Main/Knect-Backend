@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.utils.js";
 const connections = {};
 
 export const serverSideController = (req, res) => {
-  const { userId } = req.params();
+  const { userId } = req.params;
   console.log("New Client Added", userId);
 
   res.setHeader("Content-Type", "text/event-stream");

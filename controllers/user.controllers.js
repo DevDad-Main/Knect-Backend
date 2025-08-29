@@ -166,7 +166,7 @@ export const followUser = async (req, res) => {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const loggedInUser = await User.findById(id);
+    const loggedInUser = await User.findById(userId);
 
     if (!loggedInUser) {
       throw new ApiError(404, "User not found");
@@ -184,8 +184,8 @@ export const followUser = async (req, res) => {
     await followedUser.save();
 
     return res
-      .state(200)
-      .json(new ApiResponse(200, "User Successfully Followed"));
+      .status(200)
+      .json(new ApiResponse(200, {}, "User Successfully Followed"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
@@ -210,11 +210,11 @@ export const unfollowUser = async (req, res) => {
     unfollowedUser.followers = unfollowedUser.followers.filter(
       (user) => user !== userId,
     );
-    await user.save();
+    await unfollowedUser.save();
 
     return res
-      .state(200)
-      .json(new ApiResponse(200, "User Successfully Unfollowed"));
+      .status(200)
+      .json(new ApiResponse(200, {}, "User Successfully Unfollowed"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
@@ -262,16 +262,16 @@ export const sendConnectionRequest = async (req, res) => {
 
       return res
         .status(200)
-        .json(new ApiResponse(200, "Connection Request Sent"));
+        .json(new ApiResponse(200, {}, "Connection Request Sent"));
     } else if (connection && connection.status === "accepted") {
       return res
         .status(400)
-        .json(new ApiResponse(400, "You are already connected"));
+        .json(new ApiResponse(400, {}, "You are already connected"));
     }
 
     return res
       .status(400)
-      .json(new ApiResponse(400, "Connection Request Pending"));
+      .json(new ApiResponse(400, {}, "Connection Request Pending"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
@@ -302,7 +302,7 @@ export const getUserConnections = async (req, res) => {
         new ApiResponse(
           200,
           { connections, followers, following, pendingConnections },
-          "User Successfully Fetched",
+          "User Connections Successfully Fetched",
         ),
       );
   } catch (error) {
@@ -337,7 +337,9 @@ export const acceptUserConnections = async (req, res) => {
     connection.status = "accepted";
     await connection.save();
 
-    return res.status(200).json(new ApiResponse(200, "Connection Accepted"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Connection Accepted"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
@@ -347,7 +349,6 @@ export const acceptUserConnections = async (req, res) => {
 //#region Get User Profiles
 export const getUserProfile = async (req, res) => {
   try {
-    const { userId } = req.auth();
     const { profileId } = req.body;
     const profile = await User.findById(profileId);
 

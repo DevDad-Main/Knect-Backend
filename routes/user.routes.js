@@ -37,6 +37,6 @@ router.post("/follow", followUser);
 router.post("/unfollow", unfollowUser);
 router.post("/connect", sendConnectionRequest);
 router.post("/accept", acceptUserConnections);
-router.post("/profiles", isAuthenticated, getUserProfile);
+router.post("/profiles", getUserProfile);
 
 export default router;
