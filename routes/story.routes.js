@@ -6,6 +6,6 @@ import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 const router = Router();
 
 router.get("/stories", verifyJWT, getStories);
-router.post("/add-story", upload.single("media"), addStory);
+router.post("/add-story", upload.single("media"), verifyJWT, addStory);
 
 export default router;

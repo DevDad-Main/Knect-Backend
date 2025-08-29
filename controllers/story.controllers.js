@@ -8,7 +8,7 @@ import { inngest } from "../utils/inngest.utils.js";
 //#region Add A Story
 export const addStory = async (req, res) => {
   try {
-    const { userId } = req.user;
+    const userId = req.user;
     const { content, media_type, background_color } = req.body;
 
     const media = req.file;

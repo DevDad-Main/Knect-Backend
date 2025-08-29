@@ -31,8 +31,8 @@ router.post(
 router.post("/logout", verifyJWT, logoutUser);
 
 router.get("/user", verifyJWT, getUser);
-router.get("/connections", getUserConnections);
-router.get("/recent-messages", getUserRecentMessages);
+router.get("/connections", verifyJWT, getUserConnections);
+router.get("/recent-messages", verifyJWT, getUserRecentMessages);
 
 router.post(
   "/update-user",
@@ -43,11 +43,11 @@ router.post(
   verifyJWT,
   updateUser,
 );
-router.post("/discover", discoverUsers);
-router.post("/follow", followUser);
-router.post("/unfollow", unfollowUser);
-router.post("/connect", sendConnectionRequest);
-router.post("/accept", acceptUserConnections);
+router.post("/discover", verifyJWT, discoverUsers);
+router.post("/follow", verifyJWT, followUser);
+router.post("/unfollow", verifyJWT, unfollowUser);
+router.post("/connect", verifyJWT, sendConnectionRequest);
+router.post("/accept", verifyJWT, acceptUserConnections);
 router.post("/profiles/:id", verifyJWT, getUserProfile);
 
 export default router;

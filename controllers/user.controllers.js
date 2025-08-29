@@ -325,7 +325,7 @@ export const updateUser = async (req, res) => {
 //#region Get Users By Input Field
 export const discoverUsers = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { input } = req.body;
 
     // Escaping certain regex characters (malicious check)
@@ -360,7 +360,7 @@ export const discoverUsers = async (req, res) => {
 //#region Follow User
 export const followUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { id } = req.body;
 
     if (!userId) {
@@ -425,7 +425,7 @@ export const unfollowUser = async (req, res) => {
 //#region Send Connection Request
 export const sendConnectionRequest = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { id } = req.body;
 
     // Check if user has sent more than 20 connection requests in the last 24 hours
@@ -482,7 +482,7 @@ export const sendConnectionRequest = async (req, res) => {
 //#region Get User Connections
 export const getUserConnections = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const user = await User.findById(userId).populate(
       "connections followers following",
     );
@@ -515,7 +515,7 @@ export const getUserConnections = async (req, res) => {
 //#region Accept Connection Request
 export const acceptUserConnections = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { id } = req.body;
 
     const connection = await Connection.findOne({
