@@ -53,11 +53,11 @@ export const registerUser = async (req, res) => {
   //   return res.status(400).json({ errors: errors.array() });
   // }
 
-  const profilePicture = req.files?.profile_picture?.[0];
-  const coverImage = req.files?.cover_photo?.[0];
+  const profilePicture = req.files?.profile_picture?.[0] || "";
+  const coverImage = req.files?.cover_photo?.[0] || "";
 
-  let profile_picture;
-  let cover_photo;
+  // let profile_picture;
+  // let cover_photo;
 
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -69,40 +69,33 @@ export const registerUser = async (req, res) => {
     });
 
     //#region Profile_Picture and Cover_Photo Upload -> They can be not set by default
-    try {
-      profile_picture = await uploadOnImageKit(profilePicture, "512");
-      cover_photo = await uploadOnImageKit(coverImage, "1280");
-    } catch (error) {
-      throw new ApiError(
-        500,
-        "Failed to upload Profile picture or cover image.",
-      );
+    if (profilePicture) {
+      try {
+        user.profile_picture = await uploadOnImageKit(profilePicture, "512");
+      } catch (error) {
+        throw new ApiError(500, "Failed to upload profile picture.");
+      }
+    }
+
+    if (coverImage) {
+      try {
+        user.cover_photo = await uploadOnImageKit(coverImage, "1280");
+      } catch (error) {
+        throw new ApiError(500, "Failed to upload cover image.");
+      }
     }
     //#endregion
 
-    user.profile_picture = profile_picture || "";
-    user.cover_photo = cover_photo || "";
-
     await user.save();
-    //NOTE: Returning a response to the front end
+
     return res
       .status(201)
       .json(new ApiResponse(200, user, "User registered successfully"));
   } catch (error) {
-    console.log("User Creation Failed: ", error);
-
-    // if (avatar) {
-    //   await deleteFromCloudinary(avatar.public_id);
-    // }
-    // if (coverImage) {
-    //   await deleteFromCloudinary(coverImage.public_id);
-    // }
-
-    throw new ApiError(
-      500,
-      "Something went wrong while registering a new user and image files were deleted",
-      error,
-    );
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
@@ -116,60 +109,67 @@ export const loginUser = async (req, res) => {
   // if (!errors.isEmpty()) {
   //   return res.status(400).json({ errors: errors.array() });
   // }
-
   if (!username.trim() || !password.trim()) {
     throw new ApiError(400, "Username and Password is required");
   }
-  const user = await User.findOne({ username: username });
-  // const user = await User.findOne({
-  //   $or: [
-  //     {
-  //       username,
-  //     },
-  //     {
-  //       email,
-  //     },
-  //   ],
-  // });
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
+  try {
+    const user = await User.findOne({ username: username });
+    // const user = await User.findOne({
+    //   $or: [
+    //     {
+    //       username,
+    //     },
+    //     {
+    //       email,
+    //     },
+    //   ],
+    // });
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const isPassValid = await bcrypt.compare(password, user.password);
+
+    if (!isPassValid) {
+      throw new ApiError(400, "Invalid Password");
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      user._id,
+    );
+
+    const loggedInUser = await User.findById(user._id).select(
+      "-password -refreshToken",
+    );
+
+    const options = {
+      httpOnly: true, // keep false for localhost socket io to work
+      secure: true,
+      sameSite: "none",
+    };
+
+    return (
+      res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        //NOTE: Refresh token is only normally set in the cookie
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+          new ApiResponse(
+            200,
+            { user: loggedInUser, accessToken, refreshToken },
+            "User logged in successfully",
+          ),
+        )
+    );
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
-
-  const isPassValid = await bcrypt.compare(password, user.password);
-
-  if (!isPassValid) {
-    throw new ApiError(400, "Invalid Password");
-  }
-
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    user._id,
-  );
-
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken",
-  );
-
-  const options = {
-    httpOnly: true, // keep false for localhost socket io to work
-    secure: true,
-    sameSite: "none",
-  };
-
-  return (
-    res
-      .status(200)
-      .cookie("accessToken", accessToken, options)
-      //NOTE: Refresh token is only normally set in the cookie
-      .cookie("refreshToken", refreshToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          { user: loggedInUser, accessToken, refreshToken },
-          "User logged in successfully",
-        ),
-      )
-  );
 };
 //#endregion
 
@@ -364,6 +364,8 @@ export const followUser = async (req, res) => {
     if (!userId) {
       throw new ApiError(401, "Unauthorized");
     }
+
+    console.log(userId.toString());
 
     if (userId.toString() === id.toString()) {
       throw new ApiError(400, "You cannot follow yourself");
