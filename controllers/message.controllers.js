@@ -5,10 +5,14 @@ import { ApiResponse } from "../utils/ApiResponse.utils.js";
 //#region Send Message
 export const sendMessage = async (req, res) => {
   try {
-    // const { userId } = req.auth();
-    const { from_user_id, to_user_id, text } = req.body;
+    const userId = req.user;
 
-    if (!from_user_id || !to_user_id || !text) {
+    if (!userId) {
+      throw new ApiError(401, "User Not Authenticated");
+    }
+    const { to_user_id, text } = req.body;
+
+    if (!to_user_id || !text) {
       throw new ApiError(
         400,
         "User Not Authenticated or Missing required fields",
@@ -24,7 +28,7 @@ export const sendMessage = async (req, res) => {
     }
 
     const message = await Message.create({
-      from_user_id,
+      from_user_id: userId,
       to_user_id,
       text,
       message_type,
@@ -36,9 +40,10 @@ export const sendMessage = async (req, res) => {
     );
 
     const io = req.app.get("io"); // get io instance
+    const onlineUsers = req.app.get("onlineUsers");
 
     // after saving message
-    if (io) {
+    if (io && onlineUsers) {
       const destSockets = onlineUsers.get(to_user_id);
       if (destSockets) {
         for (const sid of destSockets) {
@@ -57,7 +62,7 @@ export const sendMessage = async (req, res) => {
 //#region Get Chat Messages
 export const getChatMessages = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { to_user_id } = req.body;
 
     const messages = await Message.find({

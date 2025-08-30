@@ -5,11 +5,12 @@ import {
   getChatMessages,
   getUserRecentMessages,
 } from "../controllers/message.controllers.js";
+import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 
 const router = Router();
 
-router.get("/recent-messages", getUserRecentMessages);
-router.post("/send", upload.single("media"), sendMessage);
-router.post("/get", getChatMessages);
+router.get("/recent-messages", verifyJWT, getUserRecentMessages);
+router.post("/send", upload.single("media"), verifyJWT, sendMessage);
+router.post("/get", verifyJWT, getChatMessages);
 
 export default router;

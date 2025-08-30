@@ -45,7 +45,6 @@ export const addPost = async (req, res) => {
 export const getFeedPosts = async (req, res) => {
   try {
     const user = await User.findById(req.user?._id);
-    console.log(user);
 
     // List of people whos posts we want to show, the user, his connections and following
     const userIds = [req.user?._id, ...user.connections, ...user.following];
@@ -57,7 +56,6 @@ export const getFeedPosts = async (req, res) => {
       .populate("user")
       .sort({ createdAt: -1 });
 
-    console.log("Posts: ", posts);
     return res
       .status(200)
       .json(new ApiResponse(200, posts, "Posts Fetched Successfully"));

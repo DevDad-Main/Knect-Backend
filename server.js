@@ -11,6 +11,7 @@ import messagesRouter from "./routes/message.routes.js";
 import http from "http";
 import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken";
 
 //#region CONSTANTS
 const app = express();
@@ -73,6 +74,15 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   const token = socket.handshake.query.token;
   // if (!userId) return;
+  if (!token) {
+    console.log("Socket connection rejected: no token");
+    socket.disconnect();
+    return;
+  }
+
+  // Verify the JWT
+  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+  const userId = decoded._id; // assuming your JWT payload has {_id: "..."}
 
   console.log(`Socket connected: ${socket.id} (user: ${userId})`);
 
@@ -110,6 +120,7 @@ io.on("connection", (socket) => {
 });
 
 app.set("io", io);
+app.set("onlineUsers", onlineUsers);
 //#endregion
 
 //#region MONGO CONNECTION
