@@ -73,7 +73,7 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
-  const token = socket.handshake.query.token;
+  const token = socket.handshake.auth?.token;
   // if (!userId) return;
   if (!token) {
     console.log("Socket connection rejected: no token");
@@ -81,43 +81,48 @@ io.on("connection", (socket) => {
     return;
   }
 
-  // Verify the JWT
-  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-  const userId = decoded._id; // assuming your JWT payload has {_id: "..."}
+  try {
+    // Verify the JWT
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const userId = decoded._id; // assuming your JWT payload has {_id: "..."}
 
-  console.log(`Socket connected: ${socket.id} (user: ${userId})`);
+    console.log(`Socket connected: ${socket.id} (user: ${userId})`);
 
-  const userSet = onlineUsers.get(userId) ?? new Set();
-  userSet.add(socket.id);
-  onlineUsers.set(userId, userSet);
+    const userSet = onlineUsers.get(userId) ?? new Set();
+    userSet.add(socket.id);
+    onlineUsers.set(userId, userSet);
 
-  // Receive messages
-  socket.on("private_message", (payload) => {
-    const { to_user_id, text } = payload;
-    console.log(`Message from ${userId} to ${to_user_id}: ${text}`);
+    // Receive messages
+    socket.on("private_message", (payload) => {
+      const { to_user_id, text } = payload;
+      console.log(`Message from ${userId} to ${to_user_id}: ${text}`);
 
-    // Emit to recipient if online
-    const destSockets = onlineUsers.get(to_user_id);
-    if (destSockets) {
-      for (const sid of destSockets) {
-        io.to(sid).emit("receive_message", {
-          from_user_id: userId,
-          to_user_id,
-          text,
-        });
+      // Emit to recipient if online
+      const destSockets = onlineUsers.get(to_user_id);
+      if (destSockets) {
+        for (const sid of destSockets) {
+          io.to(sid).emit("receive_message", {
+            from_user_id: userId,
+            to_user_id,
+            text,
+          });
+        }
       }
-    }
-  });
+    });
 
-  socket.on("disconnect", () => {
-    console.log(`Socket disconnected: ${socket.id}`);
-    const userSet = onlineUsers.get(userId);
-    if (userSet) {
-      userSet.delete(socket.id);
-      if (userSet.size === 0) onlineUsers.delete(userId);
-      else onlineUsers.set(userId, userSet);
-    }
-  });
+    socket.on("disconnect", () => {
+      console.log(`Socket disconnected: ${socket.id}`);
+      const userSet = onlineUsers.get(userId);
+      if (userSet) {
+        userSet.delete(socket.id);
+        if (userSet.size === 0) onlineUsers.delete(userId);
+        else onlineUsers.set(userId, userSet);
+      }
+    });
+  } catch (error) {
+    console.log("Socket connection rejected: invalid token");
+    socket.disconnect();
+  }
 });
 
 app.set("io", io);
