@@ -337,6 +337,7 @@ export const discoverUsers = async (req, res) => {
 
     // Finding all users that match the search request
     const users = await User.find({
+      _id: { $ne: userId }, // Not Equal to operator, we exclude the logged in user
       $or: [
         { username: { $regex: safeQuery, $options: "i" } },
         { email: { $regex: safeQuery, $options: "i" } },
@@ -345,12 +346,9 @@ export const discoverUsers = async (req, res) => {
       ],
     });
 
-    // Filtering out the user who is currently logged in
-    const filteredUsers = users.filter((user) => user._id !== userId);
-
     return res
       .status(200)
-      .json(new ApiResponse(200, filteredUsers, "Users Successfully Fetched"));
+      .json(new ApiResponse(200, users, "Users Successfully Fetched"));
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
