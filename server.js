@@ -63,7 +63,7 @@ app.use("/api/v1/message", messagesRouter);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: "https://devdad-knect.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   },
