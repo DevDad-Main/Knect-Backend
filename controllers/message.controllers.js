@@ -1,6 +1,7 @@
 import { Message } from "../models/Message.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
+import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 
 //#region Send Message
 export const sendMessage = async (req, res) => {
@@ -12,12 +13,12 @@ export const sendMessage = async (req, res) => {
     }
     const { to_user_id, text } = req.body;
 
-    if (!to_user_id || !text) {
-      throw new ApiError(
-        400,
-        "User Not Authenticated or Missing required fields",
-      );
-    }
+    // if (!to_user_id || !text) {
+    //   throw new ApiError(
+    //     400,
+    //     "User Not Authenticated or Missing required fields",
+    //   );
+    // }
 
     const image = req.file;
     let media_url = "";
@@ -54,7 +55,10 @@ export const sendMessage = async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, message, "Message Sent"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
@@ -82,7 +86,10 @@ export const getChatMessages = async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, messages, "Messages Fetched"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 
@@ -95,13 +102,16 @@ export const getUserRecentMessages = async (req, res) => {
     const messages = await Message.find({ to_user_id: userId })
       .populate("from_user_id to_user_id")
       .sort({ createdAt: -1 });
-    // .limit(1);
+    // .limit(5);
 
     return res
       .status(200)
       .json(new ApiResponse(200, messages, " Recent Messages Fetched"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion

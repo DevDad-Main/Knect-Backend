@@ -10,7 +10,7 @@ import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 const router = Router();
 
 router.get("/recent-messages", verifyJWT, getUserRecentMessages);
-router.post("/send", upload.single("media"), verifyJWT, sendMessage);
+router.post("/send", upload.single("image"), verifyJWT, sendMessage);
 router.post("/get", verifyJWT, getChatMessages);
 
 export default router;
