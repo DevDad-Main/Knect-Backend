@@ -151,7 +151,7 @@ export const loginUser = async (req, res) => {
   );
 
   const options = {
-    httpOnly: false,
+    httpOnly: true,
     secure: true,
     sameSite: "None",
   };
