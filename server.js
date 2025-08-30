@@ -73,7 +73,12 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
-  const token = socket.handshake.query.token;
+  // const token = socket.handshake.query.token;
+  // On backend, in socket connection:
+  const token = socket.handshake.headers.cookie
+    ?.split("accessToken=")[1]
+    ?.split(";")[0]; // extract the token from cookie header
+
   // if (!userId) return;
   if (!token) {
     console.log("Socket connection rejected: no token");
@@ -83,7 +88,7 @@ io.on("connection", (socket) => {
 
   // Verify the JWT
   const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-  const userId = decoded._id; // assuming your JWT payload has {_id: "..."}
+  const userId = decoded._id;
 
   console.log(`Socket connected: ${socket.id} (user: ${userId})`);
 

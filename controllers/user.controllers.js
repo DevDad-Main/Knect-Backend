@@ -151,7 +151,7 @@ export const loginUser = async (req, res) => {
   );
 
   const options = {
-    httpOnly: false,
+    httpOnly: true, // keep false for localhost socket io to work
     secure: true,
     sameSite: "none",
   };
