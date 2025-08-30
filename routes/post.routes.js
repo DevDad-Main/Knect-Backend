@@ -11,6 +11,6 @@ const router = Router();
 
 router.get("/feed", verifyJWT, getFeedPosts);
 router.post("/add", upload.array("images", 4), verifyJWT, addPost);
-router.post("/like", toggleLike);
+router.post("/like", verifyJWT, toggleLike);
 
 export default router;

@@ -70,25 +70,43 @@ export const getFeedPosts = async (req, res) => {
 //#region Like Post
 export const toggleLike = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
     const { postId } = req.body;
 
     const post = await Post.findById(postId);
 
-    // Removing the like if we have already liked it
-    if (post.likes_count.includes(userId)) {
-      post.likes_count = post.likes_count.filter((user) => user !== userId);
-      await post.save();
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
 
-      return res.status(200).json(new ApiResponse(200, {}, "Post Unliked"));
+    let updatedPost;
+
+    if (post.likes_count.some((id) => id.toString() === userId.toString())) {
+      // If already liked → remove
+      updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        { $pull: { likes_count: userId } },
+        { new: true },
+      );
+      return res
+        .status(200)
+        .json(new ApiResponse(200, updatedPost, "Post Unliked"));
     } else {
-      post.likes_count.push(userId);
-      await post.save();
-
-      return res.status(200).json(new ApiResponse(200, {}, "Post Liked!"));
+      // If not liked → add
+      updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        { $addToSet: { likes_count: userId } },
+        { new: true },
+      );
+      return res
+        .status(200)
+        .json(new ApiResponse(200, updatedPost, "Post Liked!"));
     }
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
