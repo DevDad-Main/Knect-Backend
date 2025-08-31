@@ -36,7 +36,7 @@ export const sendMessage = async (req, res) => {
       media_url,
     });
 
-    const messgageWithUserData = await Message.findById(message._id).populate(
+    const messageWithUserData = await Message.findById(message._id).populate(
       "from_user_id",
     );
 
@@ -49,14 +49,15 @@ export const sendMessage = async (req, res) => {
       if (destSockets) {
         for (const sid of destSockets) {
           // Send messages to recipient
-          io.to(sid).emit("receive_message", messgageWithUserData);
+          io.to(sid).emit("receive_message", messageWithUserData);
 
           // Send Notifications aswell of this message
           io.to(sid).emit("notification", {
+            _id: messageWithUserData._id,
             type: "message",
-            from: messgageWithUserData.from_user_id, // has user info due to populate
-            text: messgageWithUserData.text,
-            createdAt: messgageWithUserData.createdAt,
+            from: messageWithUserData.from_user_id, // has user info due to populate
+            text: messageWithUserData.text,
+            createdAt: messageWithUserData.createdAt,
           });
         }
       }
@@ -128,21 +129,20 @@ export const getUserRecentMessages = async (req, res) => {
 
 //region Mark As Seen
 export const markAsSeen = async (req, res) => {
-  const messageIds = req.body;
+  const userId = req.user; // current logged in user
+  const { fromUserId } = req.body; // the sender whose messages we want to mark
 
   try {
-    const messageToMark = await Message.updateMany(
-      { _id: { $in: messageIds } },
+    const messagesToMarkAsSeen = await Message.updateMany(
+      { to_user_id: userId, from_user_id: fromUserId, seen: false },
       { $set: { seen: true } },
     );
 
-    if (!messageToMark) {
-      throw new ApiError(404, "Message not found");
+    if (!messagesToMarkAsSeen) {
+      throw new ApiError(404, "Messages not found");
     }
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {}, "Messages Marked as seen"));
+    return res.status(200).json(new ApiResponse(200, {}, ""));
   } catch (error) {
     return res.status(error.status || 500).json({
       status: error.status || 500,
