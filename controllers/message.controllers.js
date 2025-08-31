@@ -48,7 +48,16 @@ export const sendMessage = async (req, res) => {
       const destSockets = onlineUsers.get(to_user_id);
       if (destSockets) {
         for (const sid of destSockets) {
+          // Send messages to recipient
           io.to(sid).emit("receive_message", messgageWithUserData);
+
+          // Send Notifications aswell of this message
+          io.to(sid).emit("notification", {
+            type: "message",
+            from: messgageWithUserData.from_user_id, // has user info due to populate
+            text: messgageWithUserData.text,
+            createdAt: messgageWithUserData.createdAt,
+          });
         }
       }
     }
@@ -98,15 +107,16 @@ export const getChatMessages = async (req, res) => {
 //#region Get User Recent Messages
 export const getUserRecentMessages = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.user;
+
     const messages = await Message.find({ to_user_id: userId })
       .populate("from_user_id to_user_id")
-      .sort({ createdAt: -1 });
-    // .limit(5);
+      .sort({ createdAt: -1 })
+      .limit(5); // Limiting the amount of users messages we receive
 
     return res
       .status(200)
-      .json(new ApiResponse(200, messages, " Recent Messages Fetched"));
+      .json(new ApiResponse(200, { messages }, " Recent Messages Fetched"));
   } catch (error) {
     return res.status(error.status || 500).json({
       status: error.status || 500,
