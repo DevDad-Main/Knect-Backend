@@ -68,7 +68,7 @@ export const getFeedPosts = async (req, res) => {
 //#region Like Post
 export const toggleLike = async (req, res) => {
   try {
-    const userId = req.user;
+    const userId = req.user?._id;
     const { postId } = req.body;
 
     const post = await Post.findById(postId);
