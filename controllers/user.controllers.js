@@ -474,7 +474,10 @@ export const sendConnectionRequest = async (req, res) => {
       .status(400)
       .json(new ApiResponse(400, {}, "Connection Request Pending"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
@@ -526,23 +529,38 @@ export const acceptUserConnections = async (req, res) => {
     if (!connection) {
       throw new ApiError(404, "Connection not found");
     }
+    // add to logged in user "connections" (no duplicates thanks to $addToSet)
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { connections: id },
+    });
 
-    const user = await User.findById(userId);
-    user.connections.push(id);
-    await user.save();
+    // add to "other users connections"
+    await User.findByIdAndUpdate(id, {
+      $addToSet: { connections: userId },
+    });
 
-    const connectedUser = await User.findById(id);
-    connectedUser.connections.push(userId);
-    await connectedUser.save();
+    // const user = await User.findById(userId);
+    // user.connections.push(id);
+    // await user.save();
+    //
+    // const connectedUser = await User.findById(id);
+    // connectedUser.connections.push(userId);
+    // await connectedUser.save();
 
-    connection.status = "accepted";
-    await connection.save();
+    await Connection.findByIdAndUpdate(connection._id, {
+      $set: { status: "accepted" },
+    });
+    // connection.status = "accepted";
+    // await connection.save();
 
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Connection Accepted"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
