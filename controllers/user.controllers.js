@@ -583,9 +583,34 @@ export const getUserProfile = async (req, res) => {
       .populate("user")
       .sort({ createdAt: -1 });
 
+    const likes = await Post.find({
+      likes_count: { $in: id },
+    })
+      .populate("user")
+      .sort({ createdAt: -1 });
+
+    // const likes = await Post.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "likes_count",
+    //       localField: "_id",
+    //       foreignField: "_id",
+    //       as: "likes",
+    //       pipeline: [{ $project: { password: 0, email: 0 } }],
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       likes: 0, // remove raw likes array
+    //     },
+    //   },
+    // ]);
+
     return res
       .status(200)
-      .json(new ApiResponse(200, { profile, posts }, "User Profile Fetched"));
+      .json(
+        new ApiResponse(200, { profile, posts, likes }, "User Profile Fetched"),
+      );
   } catch (error) {
     return res.status(error.status || 500).json({
       status: error.status || 500,

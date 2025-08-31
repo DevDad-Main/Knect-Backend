@@ -127,7 +127,7 @@ export const getUserRecentMessages = async (req, res) => {
 };
 //#endregion
 
-//region Mark As Seen
+//#region Mark As Seen
 export const markAsSeen = async (req, res) => {
   const userId = req.user; // current logged in user
   const { fromUserId } = req.body; // the sender whose messages we want to mark
@@ -150,5 +150,4 @@ export const markAsSeen = async (req, res) => {
     });
   }
 };
-
 //#endregion
