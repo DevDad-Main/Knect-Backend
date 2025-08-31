@@ -393,7 +393,7 @@ export const followUser = async (req, res) => {
 //#region Unfollow User
 export const unfollowUser = async (req, res) => {
   try {
-    const userId = req.user;
+    const userId = req.user?._id;
     const { id } = req.body;
 
     if (!userId) {
@@ -414,7 +414,10 @@ export const unfollowUser = async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "User Successfully Unfollowed"));
   } catch (error) {
-    throw new ApiError(401, "Unauthorized", error.message);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
 };
 //#endregion
