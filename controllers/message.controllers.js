@@ -76,7 +76,7 @@ export const sendMessage = async (req, res) => {
 export const getChatMessages = async (req, res) => {
   try {
     const userId = req.user;
-    const { to_user_id } = req.body;
+    const { to_user_id } = req.params;
 
     const messages = await Message.find({
       $or: [
@@ -124,4 +124,31 @@ export const getUserRecentMessages = async (req, res) => {
     });
   }
 };
+//#endregion
+
+//region Mark As Seen
+export const markAsSeen = async (req, res) => {
+  const messageIds = req.body;
+
+  try {
+    const messageToMark = await Message.updateMany(
+      { _id: { $in: messageIds } },
+      { $set: { seen: true } },
+    );
+
+    if (!messageToMark) {
+      throw new ApiError(404, "Message not found");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Messages Marked as seen"));
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+
 //#endregion
