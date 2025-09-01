@@ -58,9 +58,30 @@ export const getFeedPosts = async (req, res) => {
       .populate("user")
       .sort({ createdAt: -1 });
 
+    const comments = await Comment.aggregate([
+      { $match: { post: { $in: posts.map((p) => p._id) } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]);
+
+    const postsWithCounts = posts.map((post) => {
+      const com = comments.find(
+        (c) => c._id.toString() === post._id.toString(),
+      );
+      return {
+        ...post.toObject(), // Convert back to js object or we can use lean on the mongoose query above
+        commentsCount: com ? com.count : 0, // We return an extra field to our posts so we can get the count of each comment seperately
+      };
+    });
+
     return res
       .status(200)
-      .json(new ApiResponse(200, posts, "Posts Fetched Successfully"));
+      .json(
+        new ApiResponse(
+          200,
+          { posts: postsWithCounts },
+          "Posts Fetched Successfully",
+        ),
+      );
   } catch (error) {
     throw new ApiError(401, "Unauthorized", error.message);
   }
