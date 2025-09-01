@@ -8,6 +8,7 @@ import usersRouter from "./routes/user.routes.js";
 import postsRouter from "./routes/post.routes.js";
 import storysRouter from "./routes/story.routes.js";
 import messagesRouter from "./routes/message.routes.js";
+import commentsRouter from "./routes/comment.routes.js";
 import http from "http";
 import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
@@ -57,6 +58,7 @@ app.use("/api/v1/user", usersRouter);
 app.use("/api/v1/post", postsRouter);
 app.use("/api/v1/story", storysRouter);
 app.use("/api/v1/message", messagesRouter);
+app.use("/api/v1/comment", commentsRouter);
 //#endregion
 
 //#region Socket IO;

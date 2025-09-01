@@ -1,11 +1,11 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Comment } from "../models/Comment.models.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.utils.js";
+import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { Post } from "../models/Post.models.js";
 
 //#region Get Post Comments
-const getPostComments = asyncHandler(async (req, res) => {
+const getPostComments = async (req, res) => {
   const { postId } = req.params;
   const userId = req.user?._id;
 
@@ -55,25 +55,26 @@ const getPostComments = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, comments, "Comments fetched"));
-});
+};
 //#endregion
 
-//#region Add Comment
-const addComment = asyncHandler(async (req, res) => {
+//#region Add Comment To Post
+export const addCommentToPost = async (req, res) => {
   // TODO: add a comment to a video
-  const { videoId } = req.params;
-  const { content } = req.body;
-  if (!isValidObjectId(videoId)) {
+  // const { postId } = req.params;
+  const { postId, content } = req.body;
+
+  if (!isValidObjectId(postId)) {
     throw new ApiError(400, "Invalid video id");
   }
   try {
-    const video = await Video.findById(videoId);
-    if (!video) {
+    const post = await Post.findById(postId);
+    if (!post) {
       throw new ApiError(404, "Video not found");
     }
     const newComment = new Comment({
       content: content,
-      video: video,
+      post: post,
       owner: req.user?._id,
     });
     await newComment.save();
@@ -81,14 +82,19 @@ const addComment = asyncHandler(async (req, res) => {
     //NOTE: Only fetching the comment so we can populate the owner field to send to the frontend
     const comment = await Comment.findById(newComment._id).populate(
       "owner",
-      "-password -email",
+      "full_name username profile_picture",
     );
 
-    res.status(200).json(new ApiResponse(200, comment, "New Comment added"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { comment }, "New Comment added"));
   } catch (error) {
-    throw new ApiError(500, "Error adding comment", error);
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
   }
-});
+};
 //#endregion
 
 // const updateComment = asyncHandler(async (req, res) => {
@@ -96,7 +102,7 @@ const addComment = asyncHandler(async (req, res) => {
 // });
 
 //#region Delete Comment
-const deleteComment = asyncHandler(async (req, res) => {
+const deleteComment = async (req, res) => {
   // TODO: delete a comment
   const { id } = req.params;
 
@@ -116,5 +122,5 @@ const deleteComment = asyncHandler(async (req, res) => {
   } catch (error) {
     throw new ApiError(500, "Error deleting comment", error);
   }
-});
+};
 //#endregion
