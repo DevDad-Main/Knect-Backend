@@ -35,6 +35,13 @@ const commentSchema = new Schema(
       type: Number,
       default: 0,
     },
+    dislikes: {
+      type: Number,
+      default: 0,
+    },
+    // So we can keep a track of who liked it, as above we are usuing numbers for likes, not an easy way to track if user already liked
+    likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    dislikedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true },
 );

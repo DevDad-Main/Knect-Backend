@@ -165,3 +165,131 @@ const deleteComment = async (req, res) => {
   }
 };
 //#endregion
+
+//#region Toggle Comment Likes
+export const toggleLike = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { commentId } = req.body;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      throw new ApiError(404, "Comment not found");
+    }
+
+    let updatedComment;
+    let isLiked;
+    if (comment.likedBy.some((id) => id.toString() === userId.toString())) {
+      // Unlike → remove user from likedBy and decrement
+      updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+          $inc: { likes: -1 },
+          $pull: { likedBy: userId },
+        },
+        { new: true },
+      );
+      isLiked = false;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { isLiked, likes: updatedComment.likes },
+            "Comment unliked",
+          ),
+        );
+    } else {
+      // Like → add user to likedBy and increment
+      updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+          $inc: { likes: 1 },
+          $addToSet: { likedBy: userId },
+        },
+        { new: true },
+      );
+      isLiked = true;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { isLiked, likes: updatedComment.likes },
+            "Comment liked",
+          ),
+        );
+    }
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion;
+
+//#endregion
+
+//#region Toggle Comment Dislikes
+export const toggleDislike = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { commentId } = req.body;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      throw new ApiError(404, "Comment not found");
+    }
+
+    let updatedComment;
+    let isDisliked;
+    if (comment.dislikedBy.some((id) => id.toString() === userId.toString())) {
+      // Unlike → remove user from likedBy and decrement
+      updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+          $inc: { dislikes: -1 },
+          $pull: { dislikedBy: userId },
+        },
+        { new: true },
+      );
+      isDisliked = false;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { isDisliked, dislikes: updatedComment.dislikes },
+            "Comment undisliked",
+          ),
+        );
+    } else {
+      // Like → add user to likedBy and increment
+      updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+          $inc: { dislikes: 1 },
+          $addToSet: { dislikedBy: userId },
+        },
+        { new: true },
+      );
+      isDisliked = true;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { isDisliked, dislikes: updatedComment.dislikes },
+            "Comment Disliked",
+          ),
+        );
+    }
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion
