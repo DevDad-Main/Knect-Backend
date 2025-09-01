@@ -125,14 +125,8 @@ export const getPostById = async (req, res) => {
         path: "owner",
         select: "full_name username profile_picture",
       })
-      .populate({
-        path: "replies",
-        populate: {
-          path: "owner",
-          select: "full_name username profile_picture",
-        },
-      })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (!post) {
       throw new ApiError(404, "Post not found");
@@ -142,12 +136,26 @@ export const getPostById = async (req, res) => {
       throw new ApiError(404, "No Comments Found");
     }
 
+    // Build a nested tree
+    const commentMap = {};
+    comments.forEach((c) => (commentMap[c._id] = { ...c, replies: [] }));
+
+    const topLevel = [];
+
+    comments.forEach((c) => {
+      if (c.parent) {
+        commentMap[c.parent].replies.push(commentMap[c._id]);
+      } else {
+        topLevel.push(commentMap[c._id]);
+      }
+    });
+
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { post, comments },
+          { post, comments: topLevel },
           "Post And Commeents Fetched Successfully",
         ),
       );
