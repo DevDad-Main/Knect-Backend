@@ -121,7 +121,17 @@ export const getPostById = async (req, res) => {
     }
     const post = await Post.findById(postId).populate("user");
     const comments = await Comment.find({ post: postId })
-      .populate("owner")
+      .populate({
+        path: "owner",
+        select: "full_name username profile_picture",
+      })
+      .populate({
+        path: "replies",
+        populate: {
+          path: "owner",
+          select: "full_name username profile_picture",
+        },
+      })
       .sort({ createdAt: -1 });
 
     if (!post) {

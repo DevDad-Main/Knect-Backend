@@ -97,6 +97,47 @@ export const addCommentToPost = async (req, res) => {
 };
 //#endregion
 
+//#region Reply To Comment
+export const replyToComment = async (req, res) => {
+  const { postId, parentId, content } = req.body;
+
+  if (!isValidObjectId(postId)) {
+    throw new ApiError(400, "Invalid Post Id");
+  }
+
+  try {
+    const post = await Post.findById(postId);
+
+    const newComment = new Comment({
+      content: content,
+      post: post,
+      owner: req.user?._id,
+      parent: parentId,
+    });
+    await newComment.save();
+
+    await Comment.findByIdAndUpdate(parentId, {
+      $addToSet: { replies: newComment._id },
+    });
+
+    //NOTE: Only fetching the comment so we can populate the owner field to send to the frontend
+    const comment = await Comment.findById(newComment._id)
+      .populate("owner", "full_name username profile_picture")
+      .populate("replies");
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { comment }, "Replied to comment successfully"),
+      );
+  } catch (error) {
+    return res
+      .status(error.status || 500)
+      .json({ status: error.status || 500, message: error.message });
+  }
+};
+//#endregion
+
 // const updateComment = asyncHandler(async (req, res) => {
 //   // TODO: update a comment
 // });
