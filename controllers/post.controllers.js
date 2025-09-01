@@ -1,8 +1,10 @@
 import { Post } from "../models/Post.models.js";
+import { Comment } from "../models/Comment.models.js";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
+import { isValidObjectId } from "mongoose";
 
 //#region Add Post
 export const addPost = async (req, res) => {
@@ -100,6 +102,43 @@ export const toggleLike = async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, updatedPost, "Post Liked!"));
     }
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion
+
+//#region Get Post By ID
+export const getPostById = async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    if (!isValidObjectId(postId)) {
+      throw new ApiError(400, "Invalid Post Id");
+    }
+    const post = await Post.findById(postId).populate("user");
+    const comments = await Comment.find({ post: postId }).populate("owner");
+
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
+
+    if (!comments) {
+      throw new ApiError(404, "No Comments Found");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { post, comments },
+          "Post And Commeents Fetched Successfully",
+        ),
+      );
   } catch (error) {
     return res.status(error.status || 500).json({
       status: error.status || 500,
