@@ -8,6 +8,7 @@ import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import escapeRegex from "../utils/regex.utils.js";
 import bcrypt from "bcryptjs";
 import { isValidObjectId } from "mongoose";
+import { validationResult } from "express-validator";
 
 //#region CONSTANTS
 const SALT_ROUNDS = 12;
@@ -47,17 +48,13 @@ export const registerUser = async (req, res) => {
 
   const { firstName, lastName, email, username, password } = req.body;
 
-  // const errors = validationResult(req);
-  //
-  // if (!errors.isEmpty()) {
-  //   return res.status(400).json({ errors: errors.array() });
-  // }
-
   const profilePicture = req.files?.profile_picture?.[0] || "";
   const coverImage = req.files?.cover_photo?.[0] || "";
+  const errors = validationResult(req);
 
-  // let profile_picture;
-  // let cover_photo;
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -103,16 +100,11 @@ export const registerUser = async (req, res) => {
 //#region Login User
 export const loginUser = async (req, res) => {
   const { username, password } = req.body;
+  const errors = validationResult(req);
 
-  // const errors = validationResult(req);
-  //
-  // if (!errors.isEmpty()) {
-  //   return res.status(400).json({ errors: errors.array() });
-  // }
-  if (!username.trim() || !password.trim()) {
-    throw new ApiError(400, "Username and Password is required");
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-
   try {
     const user = await User.findOne({ username: username });
     // const user = await User.findOne({
@@ -233,9 +225,13 @@ export const getUser = async (req, res) => {
 
 //#region Update User Details
 export const updateUser = async (req, res) => {
-  try {
-    let { username, bio, location, full_name } = req.body;
+  let { username, bio, location, full_name } = req.body;
+  const errors = validationResult(req);
 
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  try {
     if (!req.user) {
       throw new ApiError(401, "User Not Authenticated");
     }

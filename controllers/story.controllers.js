@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { inngest } from "../utils/inngest.utils.js";
+import { validationResult } from "express-validator";
 
 //#region Add A Story
 export const addStory = async (req, res) => {
@@ -11,6 +12,11 @@ export const addStory = async (req, res) => {
     const userId = req.user;
     const { content, media_type, background_color } = req.body;
 
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     const media = req.file;
     let media_url = "";
 

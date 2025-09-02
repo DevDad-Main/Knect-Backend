@@ -16,16 +16,22 @@ import {
 import { getUserRecentMessages } from "../controllers/message.controllers.js";
 import { upload } from "../utils/multer.utils.js";
 import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
+import {
+  loginUserValidation,
+  registerUserValidation,
+  updateUserValidation,
+} from "../utils/validtion.utils.js";
 
 const router = Router();
 
-router.post("/login", loginUser);
+router.post("/login", loginUserValidation, loginUser);
 router.post(
   "/register",
   upload.fields([
     { name: "profile_picture", maxCount: 1 },
     { name: "cover_photo", maxCount: 1 },
   ]),
+  registerUserValidation,
   registerUser,
 );
 router.post("/logout", verifyJWT, logoutUser);
@@ -41,6 +47,7 @@ router.post(
     { name: "cover", maxCount: 1 },
   ]),
   verifyJWT,
+  updateUserValidation,
   updateUser,
 );
 router.post("/discover", verifyJWT, discoverUsers);
