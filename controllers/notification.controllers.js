@@ -1,5 +1,6 @@
 import { Notification } from "../models/Notificiation.models.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
+import { registerUserValidation } from "../utils/validtion.utils.js";
 
 //#region Get All Notifications
 export const getNotifications = async (req, res) => {
@@ -31,6 +32,25 @@ export const markNotificationRead = async (req, res) => {
     return res
       .status(200)
       .json(new ApiResponse(200, {}, "Notification marked as read"));
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion
+
+//#region Delete Notification
+export const deleteNotifcation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Notification.findByIdAndDelete(id);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Notification deleted"));
   } catch (error) {
     return res.status(error.status || 500).json({
       status: error.status || 500,

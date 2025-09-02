@@ -1,4 +1,5 @@
 import { Message } from "../models/Message.models.js";
+import { Notification } from "../models/Notificiation.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
@@ -62,6 +63,13 @@ export const sendMessage = async (req, res) => {
         createdAt: messageWithUserData.createdAt,
       });
     }
+
+    const notification = await Notification.create({
+      user: to_user_id, // Recipient
+      from: userId, // Actor from
+      type: "message",
+      text,
+    });
 
     return res.status(200).json(new ApiResponse(200, message, "Message Sent"));
   } catch (error) {
