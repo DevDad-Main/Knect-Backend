@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { isValidObjectId } from "mongoose";
+import { sendNotification } from "../utils/sendNotification.js";
 
 //#region Add Post
 export const addPost = async (req, res) => {
@@ -93,7 +94,8 @@ export const toggleLike = async (req, res) => {
   try {
     const userId = req.user?._id;
     const { postId } = req.body;
-
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
     const post = await Post.findById(postId);
 
     if (!post) {
@@ -118,7 +120,21 @@ export const toggleLike = async (req, res) => {
         postId,
         { $addToSet: { likes_count: userId } },
         { new: true },
+      ).populate("user");
+
+      // 🔍 Populate the "from" user so frontend has full data
+      const fromUser = await User.findById(userId).select(
+        "username full_name profile_picture",
       );
+
+      if (io && onlineUsers) {
+        sendNotification(io, onlineUsers, updatedPost.user._id, {
+          type: "like",
+          from: fromUser,
+          postId,
+          createdAt: new Date(),
+        });
+      }
       return res
         .status(200)
         .json(new ApiResponse(200, updatedPost, "Post Liked!"));

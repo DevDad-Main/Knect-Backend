@@ -2,6 +2,7 @@ import { Message } from "../models/Message.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
+import { sendNotification } from "../utils/sendNotification.js";
 
 //#region Send Message
 export const sendMessage = async (req, res) => {
@@ -50,17 +51,16 @@ export const sendMessage = async (req, res) => {
         for (const sid of destSockets) {
           // Send messages to recipient
           io.to(sid).emit("receive_message", messageWithUserData);
-
-          // Send Notifications aswell of this message
-          io.to(sid).emit("notification", {
-            _id: messageWithUserData._id,
-            type: "message",
-            from: messageWithUserData.from_user_id, // has user info due to populate
-            text: messageWithUserData.text,
-            createdAt: messageWithUserData.createdAt,
-          });
         }
       }
+      // Send Notifications aswell of this message
+      sendNotification(io, onlineUsers, to_user_id, {
+        _id: messageWithUserData._id,
+        type: "message",
+        from: messageWithUserData.from_user_id, // has user info due to populate
+        text: messageWithUserData.text,
+        createdAt: messageWithUserData.createdAt,
+      });
     }
 
     return res.status(200).json(new ApiResponse(200, message, "Message Sent"));
