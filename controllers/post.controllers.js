@@ -188,3 +188,23 @@ export const getPostById = async (req, res) => {
   }
 };
 //#endregion
+
+//#region Delete Post
+export const deletePost = async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    if (!isValidObjectId(postId)) {
+      throw new ApiError(400, "Invalid Post Id");
+    }
+
+    await Post.findByIdAndDelete(postId);
+    return res.status(200).json(new ApiResponse(200, {}, "Post Deleted"));
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion

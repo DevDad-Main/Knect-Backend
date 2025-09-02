@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.utils.js";
 import { uploadOnImageKit } from "../utils/imageKit.utils.js";
 import { inngest } from "../utils/inngest.utils.js";
 import { validationResult } from "express-validator";
+import { isValidObjectId } from "mongoose";
 
 //#region Add A Story
 export const addStory = async (req, res) => {
@@ -47,7 +48,7 @@ export const addStory = async (req, res) => {
     throw new ApiError(404, "Not Authorized", error.message);
   }
 };
-//#endregionza
+//#endregion
 
 //#region Get Stories
 export const getStories = async (req, res) => {
@@ -81,4 +82,23 @@ export const getStories = async (req, res) => {
     return res.status(500).json(new ApiError(500, error.message));
   }
 };
+//#endregion
+
+//#region Delete Story
+export const deleteStory = async (req, res) => {
+  const { storyId } = req.params;
+  try {
+    if (!isValidObjectId(storyId)) {
+      throw new ApiError(404, "Story not found");
+    }
+    await Story.findByIdAndDelete(storyId);
+    return res.status(200).json(new ApiResponse(200, {}, "Story Deleted"));
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+
 //#endregion

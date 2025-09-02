@@ -5,6 +5,7 @@ import {
   getFeedPosts,
   toggleLike,
   getPostById,
+  deletePost,
 } from "../controllers/post.controllers.js";
 import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 
@@ -15,5 +16,6 @@ router.get("/post/:postId", verifyJWT, getPostById);
 
 router.post("/add", upload.array("images", 4), verifyJWT, addPost);
 router.post("/like", verifyJWT, toggleLike);
+router.delete("/delete/:postId", verifyJWT, deletePost);
 
 export default router;

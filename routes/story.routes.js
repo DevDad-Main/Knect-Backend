@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { upload } from "../utils/multer.utils.js";
-import { addStory, getStories } from "../controllers/story.controllers.js";
+import {
+  addStory,
+  getStories,
+  deleteStory,
+} from "../controllers/story.controllers.js";
 import { verifyJWT } from "../middlewares/Authenticated.middlewares.js";
 import { addStoryValidation } from "../utils/validtion.utils.js";
 
@@ -14,5 +18,6 @@ router.post(
   addStoryValidation,
   addStory,
 );
+router.delete("/delete/:storyId", verifyJWT, deleteStory);
 
 export default router;
