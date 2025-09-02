@@ -1,4 +1,5 @@
 import { Post } from "../models/Post.models.js";
+import { Notification } from "../models/Notificiation.models.js";
 import { Comment } from "../models/Comment.models.js";
 import { User } from "../models/User.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
@@ -120,19 +121,24 @@ export const toggleLike = async (req, res) => {
         postId,
         { $addToSet: { likes_count: userId } },
         { new: true },
-      ).populate("user");
+      ).populate("user", "_id");
 
-      // 🔍 Populate the "from" user so frontend has full data
       const fromUser = await User.findById(userId).select(
         "username full_name profile_picture",
       );
 
+      const notification = await Notification.create({
+        user: updatedPost.user._id, // recipient
+        from: fromUser._id, // The liker in this case
+        type: "like", // or "message"
+        entityId: updatedPost._id,
+        text: "liked your post",
+      });
+
       if (io && onlineUsers) {
         sendNotification(io, onlineUsers, updatedPost.user._id, {
-          type: "like",
+          ...notification.toObject(),
           from: fromUser,
-          postId,
-          createdAt: new Date(),
         });
       }
       return res
