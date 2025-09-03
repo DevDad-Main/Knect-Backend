@@ -59,3 +59,22 @@ export const deleteNotifcation = async (req, res) => {
   }
 };
 //#endregion
+
+//#region Delete All Notification
+export const deleteAllNotificationsForUser = async (req, res) => {
+  try {
+    const loggedInUserId = req.user?._id;
+
+    await Notification.deleteMany({ user: loggedInUserId });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Notifications Cleared"));
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      status: error.status || 500,
+      message: error.message,
+    });
+  }
+};
+//#endregion
