@@ -288,8 +288,6 @@ export const toggleLike = async (req, res) => {
     });
   }
 };
-//#endregion;
-
 //#endregion
 
 //#region Toggle Comment Dislikes
