@@ -210,7 +210,10 @@ export const toggleLike = async (req, res) => {
     const userId = req.user?._id;
     const { commentId } = req.body;
 
-    const comment = await Comment.findById(commentId);
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
+
+    const comment = await Comment.findById(commentId).populate("owner");
     if (!comment) {
       throw new ApiError(404, "Comment not found");
     }
@@ -247,7 +250,27 @@ export const toggleLike = async (req, res) => {
         },
         { new: true },
       );
+
       isLiked = true;
+
+      const post = await Post.findById(comment.post);
+
+      // Send notification of like
+      const notification = await Notification.create({
+        user: comment.owner._id, // recipient
+        from: userId, // The liker in this case
+        type: "comment", // or "messag
+        entityId: post,
+        text: "liked your comment",
+      });
+
+      if (io && onlineUsers) {
+        sendNotification(io, onlineUsers, comment.owner._id, {
+          ...notification.toObject(),
+          from: comment.owner,
+        });
+      }
+
       return res
         .status(200)
         .json(
