@@ -45,7 +45,7 @@ export const sendMessage = async (req, res) => {
     const io = req.app.get("io"); // get io instance
     const onlineUsers = req.app.get("onlineUsers");
 
-    // after saving message
+    // // after saving message
     if (io && onlineUsers) {
       const destSockets = onlineUsers.get(to_user_id);
       if (destSockets) {
@@ -55,21 +55,27 @@ export const sendMessage = async (req, res) => {
         }
       }
       // Send Notifications aswell of this message
-      sendNotification(io, onlineUsers, to_user_id, {
-        _id: messageWithUserData._id,
+
+      const notification = await Notification.create({
+        user: to_user_id, // Recipient
+        from: messageWithUserData.from_user_id, // Actor from
         type: "message",
-        from: messageWithUserData.from_user_id, // has user info due to populate
         text: messageWithUserData.text,
-        createdAt: messageWithUserData.createdAt,
+      });
+
+      sendNotification(io, onlineUsers, to_user_id, {
+        ...notification.toObject(),
+        from: messageWithUserData.from_user_id,
       });
     }
 
-    const notification = await Notification.create({
-      user: to_user_id, // Recipient
-      from: userId, // Actor from
-      type: "message",
-      text,
-    });
+    // sendNotification(io, onlineUsers, to_user_id, {
+    //   _id: messageWithUserData._id,
+    //   type: "message",
+    //   from: messageWithUserData.from_user_id, // has user info due to populate
+    //   text: messageWithUserData.text,
+    //   createdAt: messageWithUserData.createdAt,
+    // });
 
     return res.status(200).json(new ApiResponse(200, message, "Message Sent"));
   } catch (error) {

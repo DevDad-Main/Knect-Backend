@@ -1,4 +1,5 @@
 import { Connection } from "../models/Connection.models.js";
+import { Notification } from "../models/Notificiation.models.js";
 import { inngest } from "../utils/inngest.utils.js";
 import { User } from "../models/User.models.js";
 import { Post } from "../models/Post.models.js";
@@ -9,6 +10,7 @@ import escapeRegex from "../utils/regex.utils.js";
 import bcrypt from "bcryptjs";
 import { isValidObjectId } from "mongoose";
 import { validationResult } from "express-validator";
+import { sendNotification } from "../utils/sendNotification.js";
 
 //#region CONSTANTS
 const SALT_ROUNDS = 12;
@@ -424,6 +426,9 @@ export const sendConnectionRequest = async (req, res) => {
     const userId = req.user;
     const { id } = req.body;
 
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
+
     // Check if user has sent more than 20 connection requests in the last 24 hours
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const connectionRequests = await Connection.find({
@@ -456,6 +461,25 @@ export const sendConnectionRequest = async (req, res) => {
         name: "app/connection.request",
         data: { connectionId: newConnection._id },
       });
+
+      // Send Notification
+
+      const fromUser = await User.findById(userId);
+
+      const notification = await Notification.create({
+        user: id, // recipient
+        from: fromUser._id, // The liker in this case
+        type: "connection", // or "message"
+        entityId: fromUser._id,
+        text: "sent you a connection request",
+      });
+
+      if (io && onlineUsers) {
+        sendNotification(io, onlineUsers, fromUser._id, {
+          ...notification.toObject(),
+          from: fromUser,
+        });
+      }
 
       return res
         .status(200)
