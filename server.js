@@ -14,6 +14,8 @@ import http from "http";
 import { Server } from "socket.io";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
+import helmet from "helmet";
+import compression from "compression";
 
 //#region CONSTANTS
 const app = express();
@@ -37,6 +39,8 @@ app.use(
   }),
 );
 
+app.use(helmet());
+app.use(compression());
 app.use(express.json());
 app.use(cookieParser());
 app.use(

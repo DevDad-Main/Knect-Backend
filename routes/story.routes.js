@@ -15,7 +15,7 @@ router.post(
   "/add-story",
   upload.single("media"),
   verifyJWT,
-  addStoryValidation,
+  // addStoryValidation,
   addStory,
 );
 router.delete("/delete/:storyId", verifyJWT, deleteStory);

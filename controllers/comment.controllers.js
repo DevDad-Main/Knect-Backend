@@ -157,7 +157,7 @@ export const replyToComment = async (req, res) => {
     });
 
     if (io && onlineUsers) {
-      sendNotification(io, onlineUsers, comment.owner._id, {
+      sendNotification(io, onlineUsers, otherUsersComment.owner._id, {
         ...notification.toObject(),
         from: comment.owner,
       });
