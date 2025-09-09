@@ -80,7 +80,11 @@ export const updateUserValidation = [
     .bail()
     .isLength({ min: 5, max: 12 })
     .withMessage("Username must be between 5 and 12 characters.")
-    .custom(async (value) => {
+    .custom(async (value, { req }) => {
+      const loggedInUser = await User.findById(req.user?._id);
+      if (loggedInUser.username === value) {
+        return;
+      }
       const user = await User.findOne({ username: value });
       if (user) {
         throw new Error("Username already exists, Please choose another.");
