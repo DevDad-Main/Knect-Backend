@@ -30,7 +30,6 @@ A modern, scalable backend for a social networking platform built with cutting-e
 
 - **Node.js** - Runtime environment
 - **Express.js** - Web application framework
-- **TypeScript** - Type-safe JavaScript
 
 ### Database
 
